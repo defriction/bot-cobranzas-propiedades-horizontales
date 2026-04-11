@@ -19,18 +19,20 @@ async def generate_recordatorio_with_groq(apartamento: str, propietario: str) ->
         return f"Estimado(a) {propietario} del apto {apartamento}, recuerde pagar su administración antes del día 10 para disfrutar de un 10% de descuento."
         
     system_prompt = (
-        "Eres el asistente administrativo automatizado del conjunto residencial 'Arboreto Guayacán'. "
-        "Tu objetivo es redactar un mensaje recordatorio cordial, profesional, corto y amigable para fomentar la cultura de pronto pago. "
-        "Usa siempre emojis para que el mensaje se sienta ameno y humano (ej. 👋, 🏢, ✨, 📱), sin exagerar. "
-        "Bajo ninguna circunstancia debes mencionar valores específicos de saldo o meses de mora, ya que esta es una comunicación general preventiva."
+        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (la cual está conformada por múltiples torres y edificios). "
+        "Redacta textos amables y bien estructurados (de 1 a 2 párrafos cortos). "
+        "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨, 📱, 🌿, 🚀). "
+        "Regla estricta 1: NUNCA menciones montos de dinero ni meses de mora, es un recordatorio general preventivo para toda la copropiedad. "
+        "Regla estricta 2: Mantén un lenguaje institucional, corporativo y respetuoso. NUNCA asumas situaciones personales ni propongas qué hacer con el dinero ahorrado (cero menciones a viajes, cine, playa, etc)."
     )
     
     user_prompt = (
-        f"Redacta un mensaje muy amable dirigido a {propietario}, residente del apartamento {apartamento}. "
-        "El mensaje debe recordarle que si realiza el pago de la cuota de administración "
-        "antes o incluso el mismo día 10 de este mes, se beneficiará de un 10% de descuento por pronto pago. "
-        "No uses placeholders como [Mes] o [Año], queremos que suene natural. Invítalo amablemente a aprovechar este beneficio. "
-        "IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración Arboreto Guayacán. (Este es un mensaje automático, por favor no responder)'."
+        f"Saluda amablemente a {propietario} (Apto {apartamento}). "
+        "Escríbele un mensaje persuasivo (con varios emojis divertidos) recordándole que si paga su cuota de administración "
+        "antes o el mismo día 10 del mes, obtendrá un 10% de descuento. "
+        "Explica los beneficios de esto de forma ESTRICTAMENTE ADMINISTRATIVA (por ejemplo, el ahorro financiero y el apoyo para el mantenimiento de nuestro patrimonio en común). "
+        "PROHIBIDO: No le des consejos de vida, ni hables de vacaciones, tiempo libre o películas. Limítate a ser un asesor corporativo. "
+        "IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
     )
 
     try:
@@ -60,27 +62,25 @@ async def generate_cobro_with_groq(apartamento: str, propietario: str, saldo: fl
         return f"Estimado(a) {propietario} del apto {apartamento}, recuerde su saldo de ${saldo}."
         
     system_prompt = (
-        "Eres el asistente administrativo automatizado del conjunto residencial 'Arboreto Guayacán'. "
-        "Tu objetivo es redactar mensajes de cobro de administración a los propietarios de manera profesional, "
-        "clara, concisa y respetuosa, adecuada para una copropiedad. "
-        "Acompaña el mensaje de algunos emojis pertinentes (ej. 🏢, 💡, 📅, 💳) para mantener un aspecto amigable. "
-        "Bajo NINGUNA circunstancia debes ser grosero ni amenazante. Usa un tono cordial pero firme cuando haya mora acumulada."
+        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (conformada por múltiples torres y edificios). "
+        "Tus mensajes en WhatsApp deben ser bien estructurados y educados (de 1 a 2 párrafos cortos). "
+        "Mete varios emojis pertinentes (ej. 🏢, 💡, 📅, 💳, ⚠️, 🤝) para que el texto sea dinámico y no aburrido. "
+        "NUNCA seas grosero, mantén un tono relajado pero firme al hablar de multas o mora."
     )
     
     if meses_mora == 0 or meses_mora == 1:
         user_prompt = (
-            f"El propietario {propietario} del apartamento {apartamento} tiene un saldo pendiente de ${saldo:,.2f} "
-            f"correspondiente a una mora reciente ({meses_mora} meses). Redacta un mensaje de 'recordatorio' cordial y corto, "
-            f"informándole su saldo actual, agradeciendo su atención y recordando que el pago oportuno es vital "
-            f"para el mantenimiento del conjunto residencial. "
-            f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración Arboreto Guayacán. (Este es un mensaje automático, por favor no responder)'."
+            f"Saluda de forma cordial y estructurada a {propietario} (Inmueble: {apartamento}). "
+            f"Avísale amigablemente con varios emojis que su estado actual de mora es de {meses_mora} mes(es) por un saldo de ${saldo:,.2f}. "
+            f"Tómate un par de oraciones para recordarle lo importante que es pagar a tiempo para mantener hermosa la copropiedad y sus torres. "
+            f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
         )
     else:
         user_prompt = (
-            f"El propietario {propietario} del apartamento {apartamento} tiene un saldo acumulado de ${saldo:,.2f} "
-            f"y presenta {meses_mora} mes(es) de mora. Redacta un mensaje firme pero respetuoso y profesional "
-            f"solicitando la regularización inmediata de la obligación. Menciona explícitamente el apartamento, el saldo a pagar y los meses de mora. "
-            f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración Arboreto Guayacán. (Este es un mensaje automático, por favor no responder)'."
+            f"Contacta seriamente pero con amabilidad a {propietario} (Inmueble: {apartamento}). "
+            f"Notifícale de manera clara (inyectando algunos emojis) que presenta {meses_mora} meses de mora, con un acumulado a pagar de ${saldo:,.2f}. "
+            f"Explícale la urgencia de regularizar su situación y las ventajas de estar al día para el buen funcionamiento de la Propiedad Horizontal. "
+            f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
         )
 
     try:
