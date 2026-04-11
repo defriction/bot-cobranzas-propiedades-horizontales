@@ -1,0 +1,20 @@
+# Entornos Virtuales
+venv/
+env/
+.env
+
+# Archivos de Claves y Credenciales
+credentials.json
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+
+# Entornos de desarrollo de SO
+.DS_Store
+Thumbs.db
