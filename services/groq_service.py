@@ -20,8 +20,9 @@ async def generate_recordatorio_with_groq(apartamento: str, propietario: str) ->
         
     system_prompt = (
         "Eres el asistente administrativo automatizado del conjunto residencial 'Arboreto Guayacán'. "
-        "Tu objetivo es redactar un mensaje recordatorio cordial, profesional y corto para fomentar la cultura de pronto pago. "
-        "Bajo ninguna circunstancia debes mencionar valores específicos de saldo o meses de mora, ya que esta es una comunicación general preventiva para todos."
+        "Tu objetivo es redactar un mensaje recordatorio cordial, profesional, corto y amigable para fomentar la cultura de pronto pago. "
+        "Usa siempre emojis para que el mensaje se sienta ameno y humano (ej. 👋, 🏢, ✨, 📱), sin exagerar. "
+        "Bajo ninguna circunstancia debes mencionar valores específicos de saldo o meses de mora, ya que esta es una comunicación general preventiva."
     )
     
     user_prompt = (
@@ -62,6 +63,7 @@ async def generate_cobro_with_groq(apartamento: str, propietario: str, saldo: fl
         "Eres el asistente administrativo automatizado del conjunto residencial 'Arboreto Guayacán'. "
         "Tu objetivo es redactar mensajes de cobro de administración a los propietarios de manera profesional, "
         "clara, concisa y respetuosa, adecuada para una copropiedad. "
+        "Acompaña el mensaje de algunos emojis pertinentes (ej. 🏢, 💡, 📅, 💳) para mantener un aspecto amigable. "
         "Bajo NINGUNA circunstancia debes ser grosero ni amenazante. Usa un tono cordial pero firme cuando haya mora acumulada."
     )
     
