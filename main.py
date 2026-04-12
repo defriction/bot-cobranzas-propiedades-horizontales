@@ -4,7 +4,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from routers.cobro import router as cobro_router
-from routers.cobro import router as cobro_router
 from services.cobro_service import procesar_recordatorios, procesar_cobros, procesar_felicitaciones
 
 @asynccontextmanager
@@ -16,26 +15,26 @@ async def lifespan(app: FastAPI):
     # TAREAS PROGRAMADAS AUTOMÁTICAS (CRON INTERNO)
     # =========================================================
     
-    # Fase 1 (Recordatorios): Días 5 y 10 de cada mes a las 09:00 AM
+    # Fase 1 (Recordatorios): Días 5 y 10 de cada mes a las 09:00 AM (Hora Colombia)
     scheduler.add_job(
         procesar_recordatorios, 
-        CronTrigger(day='5,10', hour='9', minute='0'),
+        CronTrigger(day='5,10', hour='9', minute='0', timezone='America/Bogota'),
         id="fase1_recordatorio",
         replace_existing=True
     )
     
-    # Fase 2 (Cobranzas con multa/mora): Día 15 de cada mes a las 09:00 AM
+    # Fase 2 (Cobranzas con multa/mora): Día 15 de cada mes a las 09:00 AM (Hora Colombia)
     scheduler.add_job(
         procesar_cobros, 
-        CronTrigger(day='15', hour='9', minute='0'),
+        CronTrigger(day='15', hour='9', minute='0', timezone='America/Bogota'),
         id="fase2_cobranza",
         replace_existing=True
     )
     
-    # Fase 3 (Felicitaciones por estar al día): Día 20 de cada mes a las 09:00 AM
+    # Fase 3 (Felicitaciones por estar al día): Día 20 de cada mes a las 09:00 AM (Hora Colombia)
     scheduler.add_job(
         procesar_felicitaciones, 
-        CronTrigger(day='20', hour='9', minute='0'),
+        CronTrigger(day='20', hour='9', minute='0', timezone='America/Bogota'),
         id="fase3_felicitacion",
         replace_existing=True
     )
