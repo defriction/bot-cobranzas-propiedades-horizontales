@@ -10,5 +10,6 @@ class Settings:
     EVOLUTION_API_URL = os.environ.get("EVOLUTION_API_URL", "http://localhost:8080")
     EVOLUTION_API_TOKEN = os.environ.get("EVOLUTION_API_TOKEN", "")
     EVOLUTION_INSTANCE_NAME = os.environ.get("EVOLUTION_INSTANCE_NAME", "")
+    API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "super_secreto_local")
 
 settings = Settings()
