@@ -19,8 +19,8 @@ async def generate_recordatorio_with_groq() -> str:
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
-        "Redacta textos amables, concisos y bien estructurados (máximo 1 párrafo corto o 3 oraciones). "
-        "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨, 📱). "
+        "Redacta textos amables, EXTREMADAMENTE concisos y al grano (MÁXIMO 2 oraciones cortas). "
+        "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨). "
         "Regla estricta 1: NUNCA menciones saldos ni fechas. "
         "Regla estricta 2: Mantén un lenguaje institucional, corporativo y respetuoso."
     )
@@ -38,7 +38,7 @@ async def generate_recordatorio_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=180
+            max_tokens=100
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
@@ -57,9 +57,9 @@ async def generate_cobro_with_groq(tipo: str) -> str:
         return "Le solicitamos amablemente revisar su estado de cuenta para ponerse al día."
         
     system_prompt = (
-        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (conformada por múltiples torres y edificios). "
-        "Tus mensajes en WhatsApp deben ser bien estructurados y concisos (máximo 1 párrafo corto o 4 oraciones). "
-        "Mete varios emojis pertinentes (ej. 🏢, 💡, 📅, 💳, ⚠️, 🤝) para que el texto sea dinámico y no aburrido. "
+        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
+        "Tus mensajes en WhatsApp deben ser EXTREMADAMENTE concisos (MÁXIMO 2 oraciones directas). "
+        "Mete un par de emojis pertinentes (ej. 🏢, ⚠️, 🤝) para no aburrir. "
         "NUNCA seas grosero, mantén un tono relajado pero firme al hablar de multas o mora."
     )
     
@@ -82,7 +82,7 @@ async def generate_cobro_with_groq(tipo: str) -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=250
+            max_tokens=100
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
@@ -101,8 +101,8 @@ async def generate_felicitacion_with_groq() -> str:
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
-        "Redacta textos muy amables, felices y concisos (máximo 1 párrafo corto o 3 oraciones). "
-        "Usa emojis amigables y de celebración en WhatsApp (ej. 🎉, 🏢, ✨, 🙌). "
+        "Redacta textos EXTREMADAMENTE felices pero muy al grano (MÁXIMO 2 oraciones cortas). "
+        "Usa emojis de celebración (ej. 🎉, 🏢, ✨, 🙌). "
         "Regla estricta: Mantén un lenguaje institucional y respetuoso. NUNCA asumas situaciones personales."
     )
     
@@ -119,7 +119,7 @@ async def generate_felicitacion_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.2,
-            max_tokens=250
+            max_tokens=100
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
