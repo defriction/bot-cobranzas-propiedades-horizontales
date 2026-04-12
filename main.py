@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -48,12 +49,16 @@ async def lifespan(app: FastAPI):
     )
     
     scheduler.start()
-    print("\n⏰ Servidor en línea. ¡Reloj automático interno (APScheduler) está activo!\n")
+    
+    # Uvicorn envuelve standard output, así que usamos el Logger nativo para garantizar visibilidad en Docker
+    logger = logging.getLogger("uvicorn.error")
+    logger.info("⏰ Servidor en línea. ¡Reloj automático interno (APScheduler) está activo!")
+    
     yield
     
     # Apagar grácilmente el reloj cuando el servidor detenga su proceso
     scheduler.shutdown()
-    print("\n⏰ Reloj automático interno apagado.\n")
+    logger.info("⏰ Reloj automático interno apagado.")
 
 # Se inyecta el ciclo de vida (lifespan) a la app de FastAPI
 app = FastAPI(title="Bot de Cobro - Arboreto Guayacán", version="1.0.0", lifespan=lifespan)
