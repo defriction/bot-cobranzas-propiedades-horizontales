@@ -19,7 +19,7 @@ async def generate_recordatorio_with_groq() -> str:
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
-        "Redacta textos amables, EXTREMADAMENTE concisos y al grano (MÁXIMO 2 oraciones cortas). "
+        "Redacta textos amables, EXTREMADAMENTE concisos y al grano (MÁXIMO 1 sola oración corta). "
         "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨). "
         "Regla estricta 1: NUNCA menciones saldos ni fechas. "
         "Regla estricta 2: Mantén un lenguaje institucional, corporativo y respetuoso."
@@ -38,9 +38,9 @@ async def generate_recordatorio_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=100
+            max_tokens=60
         )
-        return completion.choices[0].message.content.strip()
+        return completion.choices[0].message.content.strip(' "\'”“')
     except Exception as e:
         print(f"Error generando plantilla recordatorio con Groq: {e}")
         return "Le recordamos amablemente que si realiza su pago de administración a tiempo podrá disfrutar del descuento. ¡Gracias!"
@@ -57,8 +57,8 @@ async def generate_cobro_with_groq(tipo: str) -> str:
         return "Le solicitamos amablemente revisar su estado de cuenta para ponerse al día."
         
     system_prompt = (
-        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
-        "Tus mensajes en WhatsApp deben ser EXTREMADAMENTE concisos (MÁXIMO 2 oraciones directas). "
+        "Eres el asistente de 'Arboreto Guayacán'. "
+        "Tus mensajes en WhatsApp deben ser EXTREMADAMENTE concisos (MÁXIMO 1 sola oración directa). "
         "Mete un par de emojis pertinentes (ej. 🏢, ⚠️, 🤝) para no aburrir. "
         "NUNCA seas grosero, mantén un tono relajado pero firme al hablar de multas o mora."
     )
@@ -82,9 +82,9 @@ async def generate_cobro_with_groq(tipo: str) -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=100
+            max_tokens=60
         )
-        return completion.choices[0].message.content.strip()
+        return completion.choices[0].message.content.strip(' "\'”“')
     except Exception as e:
         print(f"Error generando plantilla de cobro con Groq ({tipo}): {e}")
         return "Por favor, lo invitamos a ponerse al corriente con sus obligaciones administrativas."
@@ -101,7 +101,7 @@ async def generate_felicitacion_with_groq() -> str:
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
-        "Redacta textos EXTREMADAMENTE felices pero muy al grano (MÁXIMO 2 oraciones cortas). "
+        "Redacta textos EXTREMADAMENTE felices pero muy al grano (MÁXIMO 1 sola oración corta). "
         "Usa emojis de celebración (ej. 🎉, 🏢, ✨, 🙌). "
         "Regla estricta: Mantén un lenguaje institucional y respetuoso. NUNCA asumas situaciones personales."
     )
@@ -119,9 +119,9 @@ async def generate_felicitacion_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.2,
-            max_tokens=100
+            max_tokens=60
         )
-        return completion.choices[0].message.content.strip()
+        return completion.choices[0].message.content.strip(' "\'”“')
     except Exception as e:
         print(f"Error generando plantilla de felicitación con Groq: {e}")
         return "Agradecemos profundamente su compromiso; su puntualidad con la administración es invaluable."
