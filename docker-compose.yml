@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  bot_cobranzas:
+    container_name: bot_cobranzas_arboreto
+    build: .
+    restart: unless-stopped
+    ports:
+      # Exponemos la API interna de cobranzas en el puerto 8085 de la máquina (No colisionará con otros endpoints n8n)
+      - "8085:8000"
+    environment:
+      - TZ=America/Bogota
+    volumes:
+      - ./.env:/app/.env
+      - ./credentials.json:/app/credentials.json

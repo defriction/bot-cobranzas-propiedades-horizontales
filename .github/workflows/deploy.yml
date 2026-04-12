@@ -1,0 +1,55 @@
+name: Deploy Cobranzas Bot
+
+on:
+  push:
+    branches: [ main ] # Se dispara al modificar la rama principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    
+    # 1. Descargar el código
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Copiar archivos al VPS (Usando la ruta específica para prevenir mezclas)
+    - name: 🚚 Copy files via SCP
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        source: "."
+        target: "/root/apps/automations/bot-cobranzas"
+
+    # 3. Entrar y Ejecutar Docker
+    - name: 🚀 Deploy via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          # Crear la carpeta si no existe
+          mkdir -p /root/apps/automations/bot-cobranzas
+          
+          # Entrar al directorio
+          cd /root/apps/automations/bot-cobranzas
+          
+          # Crear archivo .env desde secretos de GitHub
+          echo "${{ secrets.ENV_FILE }}" > .env
+          
+          # Crear archivo credentials.json desde secretos de GitHub
+          echo '${{ secrets.CREDENTIALS_JSON }}' > credentials.json
+          
+          # Reiniciar el servicio forzando lectura del docker-compose.yml asociado
+          echo "🔄 Desplegando nueva versión de Cobranzas Arboreto Guayacán..."
+          
+          # El flag -p asegura que el nombre interno del stack sea único
+          docker compose -p bot_cobranzas down
+          docker compose -p bot_cobranzas up -d --build
+          
+          # Limpiar imágenes viejas "dangling" para ahorrar espacio (Seguro)
+          # Esto borra fragmentos de compilación pasados sin borrar los que están en uso por otros bots
+          docker image prune -f

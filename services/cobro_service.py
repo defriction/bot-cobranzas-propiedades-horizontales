@@ -4,7 +4,7 @@ from core.config import settings
 from services.groq_service import generate_recordatorio_with_groq, generate_cobro_with_groq
 from services.whatsapp_service import send_whatsapp_message
 
-LINK_PAGO_PSE = "https://web-conjuntos.jelpit.com/pagar-mi-administracion?utm_source=Plataforma&utm_medium=Mailing&utm_campaign=HOME_JELPIT&utm_content=Conjuntos#/"
+LINK_PAGO_PSE = "https://web-conjuntos.jelpit.com/pagar-mi-administracion#/"
 EMAIL_COMPROBANTE = "arboretoguayacan0@gmail.com"
 
 SCOPES = [
