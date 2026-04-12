@@ -1,15 +1,32 @@
 version: '3.8'
 
 services:
-  bot_cobranzas:
-    container_name: bot_cobranzas_arboreto
+  # 🏢 TU BOT DE COBRANZAS
+  cobranzas_bot:
     build: .
-    restart: unless-stopped
-    ports:
-      # Exponemos la API interna de cobranzas en el puerto 8085 de la máquina (No colisionará con otros endpoints n8n)
-      - "8085:8000"
-    environment:
-      - TZ=America/Bogota
+    container_name: cobranzas_bot
+    restart: always
+    env_file: .env
     volumes:
-      - ./.env:/app/.env
       - ./credentials.json:/app/credentials.json
+    networks:
+      - proxy # Se conecta a la red pública para que Traefik lo vea
+      - internal # Se conecta a la red privada para hablar con otras integraciones (como Evolution)
+    labels:
+      - "traefik.enable=true"
+      # RUTA: Todo lo que empiece por /cobranzas va a este contenedor
+      - "traefik.http.routers.cobranzas-bot.rule=Host(`n8n.srv1153123.hstgr.cloud`) && PathPrefix(`/cobranzas`)"
+      - "traefik.http.routers.cobranzas-bot.entrypoints=websecure"
+      - "traefik.http.routers.cobranzas-bot.tls=true"
+      - "traefik.http.routers.cobranzas-bot.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.cobranzas-bot.loadbalancer.server.port=8000"
+      # MIDDLEWARE: Le quitamos el "/cobranzas" antes de pasarlo a FastAPI de Python
+      - "traefik.http.middlewares.cobranzas-strip.stripprefix.prefixes=/cobranzas"
+      - "traefik.http.routers.cobranzas-bot.middlewares=cobranzas-strip@docker"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: true
