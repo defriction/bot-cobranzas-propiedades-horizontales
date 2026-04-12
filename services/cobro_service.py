@@ -32,21 +32,27 @@ async def procesar_recordatorios():
     try:
         data_rows = obtener_datos_sheet()
         
+        print("Generando Plantilla de Recordatorio con IA (1 Sola vez)...")
+        plantilla = await generate_recordatorio_with_groq()
+        
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 3:
-                print(f"Fila {idx} omitida (faltan datos): {row}")
+                print(f"Fila {idx} omitida (faltan datos básicos): {row}")
                 continue
                 
             apartamento = row[0].strip()
             propietario = row[1].strip()
             telefono = row[2].strip()
             
-            if telefono:
+            # La columna F (Enviar_Mensaje) corresponde al índice 5
+            enviar_mensaje = row[5].strip().upper() if len(row) > 5 else "FALSE"
+            
+            if telefono and enviar_mensaje == 'TRUE':
                 print(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
-                mensaje_generado = await generate_recordatorio_with_groq(apartamento, propietario)
-                await send_whatsapp_message(telefono, mensaje_generado)
+                mensaje_final = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
+                await send_whatsapp_message(telefono, mensaje_final)
             else:
-                print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Sin teléfono.")
+                print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Sin teléfono o 'Enviar_Mensaje' es '{enviar_mensaje}'.")
                 
         print("Finalizado procesamiento de Fase 1 (Recordatorios).")
         
@@ -63,9 +69,13 @@ async def procesar_cobros():
     try:
         data_rows = obtener_datos_sheet()
         
+        print("Generando Plantillas de Cobro con IA (Leve y Grave, solo 2 llamadas)...")
+        plantilla_leve = await generate_cobro_with_groq("leve")
+        plantilla_grave = await generate_cobro_with_groq("grave")
+        
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 5:
-                print(f"Fila {idx} omitida (datos incompletos): {row}")
+                print(f"Fila {idx} omitida (datos incompletos básicos): {row}")
                 continue
                 
             apartamento = row[0].strip()
@@ -73,6 +83,9 @@ async def procesar_cobros():
             telefono = row[2].strip()
             saldo_str = row[3].strip()
             mora_str = row[4].strip()
+            
+            # La columna F (Enviar_Mensaje) corresponde al índice 5
+            enviar_mensaje = row[5].strip().upper() if len(row) > 5 else "FALSE"
             
             try:
                 saldo_limpio = saldo_str.replace('$', '').replace(',', '').strip()
@@ -82,10 +95,20 @@ async def procesar_cobros():
                 print(f"Fila {idx} (Apto {apartamento}): Error numérico (Saldo: '{saldo_str}').")
                 continue
                 
-            if saldo > 0 and telefono:
+            if saldo > 0 and telefono and enviar_mensaje == 'TRUE':
                 print(f"Fase 2 (Cobro) -> Apto {apartamento} | Saldo: ${saldo} | Mora: {meses_mora}")
-                mensaje_generado = await generate_cobro_with_groq(apartamento, propietario, saldo, meses_mora)
-                await send_whatsapp_message(telefono, mensaje_generado)
+                
+                plantilla_base = plantilla_leve if meses_mora <= 1 else plantilla_grave
+                saldo_formateado = f"{saldo:,.2f}"
+                
+                mensaje_final = plantilla_base.replace("[PROPIETARIO]", propietario)\
+                                              .replace("[APARTAMENTO]", apartamento)\
+                                              .replace("[SALDO]", saldo_formateado)\
+                                              .replace("[MESES_MORA]", str(meses_mora))
+                                              
+                await send_whatsapp_message(telefono, mensaje_final)
+            elif enviar_mensaje != 'TRUE':
+                print(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: La columna 'Enviar_Mensaje' dice '{enviar_mensaje}'.")    
             elif not telefono and saldo > 0:
                 print(f"Fase 2: Fila {idx} omitida: Debe ${saldo} pero no tiene teléfono.")
                 

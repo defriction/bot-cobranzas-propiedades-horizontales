@@ -10,28 +10,28 @@ else:
 # ===============================================
 # FASE 1: RECORDATORIO PREVENTIVO (DESCUENTO)
 # ===============================================
-async def generate_recordatorio_with_groq(apartamento: str, propietario: str) -> str:
+async def generate_recordatorio_with_groq() -> str:
     """
-    Fase 1: Genera un mensaje de recordatorio general de pronto pago.
-    No se mencionan montos de deuda.
+    Fase 1: Genera un mensaje de recordatorio general de pronto pago usando plantilla.
     """
     if not groq_client:
-        return f"Estimado(a) {propietario} del apto {apartamento}, recuerde pagar su administración antes del día 10 para disfrutar de un 10% de descuento."
+        return "Estimado(a) [PROPIETARIO] del apto [APARTAMENTO], recuerde pagar su administración antes del día 10 para disfrutar de un 10% de descuento."
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (la cual está conformada por múltiples torres y edificios). "
-        "Redacta textos amables y bien estructurados (de 1 a 2 párrafos cortos). "
-        "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨, 📱, 🌿, 🚀). "
-        "Regla estricta 1: NUNCA menciones montos de dinero ni meses de mora, es un recordatorio general preventivo para toda la copropiedad. "
+        "Redacta textos amables, concisos y bien estructurados (máximo 1 párrafo corto o 3 oraciones). "
+        "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨, 📱). "
+        "Regla estricta 1: El descuento es EXACTAMENTE del 10% y la fecha límite es EXACTAMENTE el día 10 del mes. PROHIBIDO alterar estos números. NUNCA menciones saldos. "
         "Regla estricta 2: Mantén un lenguaje institucional, corporativo y respetuoso. NUNCA asumas situaciones personales ni propongas qué hacer con el dinero ahorrado (cero menciones a viajes, cine, playa, etc)."
     )
     
     user_prompt = (
-        f"Saluda amablemente a {propietario} (Apto {apartamento}). "
-        "Escríbele un mensaje persuasivo (con varios emojis divertidos) recordándole que si paga su cuota de administración "
-        "antes o el mismo día 10 del mes, obtendrá un 10% de descuento. "
-        "Explica los beneficios de esto de forma ESTRICTAMENTE ADMINISTRATIVA (por ejemplo, el ahorro financiero y el apoyo para el mantenimiento de nuestro patrimonio en común). "
-        "PROHIBIDO: No le des consejos de vida, ni hables de vacaciones, tiempo libre o películas. Limítate a ser un asesor corporativo. "
+        "Saluda amablemente a la persona usando EXACTAMENTE la palabra [PROPIETARIO] y menciona su inmueble usando EXACTAMENTE la palabra [APARTAMENTO]. No modifiques estos corchetes. "
+        "Escríbele un mensaje persuasivo y con emojis recordando el beneficio de pronto pago. "
+        "REGLA DE FORMATO: Resalta los números EXACTOS en negritas (asteriscos) EN FORMA DE LISTA:\n"
+        "• *Fecha Límite:* Hasta el día 10 del mes\n"
+        "• *Beneficio:* 10% de descuento\n\n"
+        "Explica los beneficios de forma ESTRICTAMENTE ADMINISTRATIVA. PROHIBIDO MODIFICAR LOS NÚMEROS: SIEMPRE es el día 10 y SIEMPRE es un 10% de descuento. Limítate a ser un asesor corporativo. "
         "IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
     )
 
@@ -42,44 +42,49 @@ async def generate_recordatorio_with_groq(apartamento: str, propietario: str) ->
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3,
-            max_tokens=250
+            temperature=0.1,
+            max_tokens=180
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
-        print(f"Error generando recordatorio con Groq para apto {apartamento}: {e}")
-        return (f"Estimado(a) {propietario} del Apto {apartamento}, le recordamos amablemente que si realiza "
+        print(f"Error generando plantilla recordatorio con Groq: {e}")
+        return (f"Estimado(a) [PROPIETARIO] del Apto [APARTAMENTO], le recordamos amablemente que si realiza "
                 f"su pago de administración antes del 10 del presente mes, podrá disfrutar del 10% de descuento. ¡Gracias!")
 
 # ===============================================
 # FASE 2: GESTIÓN DE COBRANZA Y MORA
 # ===============================================
-async def generate_cobro_with_groq(apartamento: str, propietario: str, saldo: float, meses_mora: int) -> str:
+async def generate_cobro_with_groq(tipo: str) -> str:
     """
-    Fase 2: Genera un mensaje de cobro dinámico según la mora.
+    Fase 2: Genera un mensaje de cobro dinámico según la mora en formato plantilla.
+    tipo puede ser 'leve' (0-1 meses) o 'grave' (2+ meses).
     """
     if not groq_client:
-        return f"Estimado(a) {propietario} del apto {apartamento}, recuerde su saldo de ${saldo}."
+        return f"Estimado(a) [PROPIETARIO] del apto [APARTAMENTO], recuerde su saldo de $[SALDO]."
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (conformada por múltiples torres y edificios). "
-        "Tus mensajes en WhatsApp deben ser bien estructurados y educados (de 1 a 2 párrafos cortos). "
+        "Tus mensajes en WhatsApp deben ser bien estructurados y concisos (máximo 1 párrafo corto o 4 oraciones). "
         "Mete varios emojis pertinentes (ej. 🏢, 💡, 📅, 💳, ⚠️, 🤝) para que el texto sea dinámico y no aburrido. "
         "NUNCA seas grosero, mantén un tono relajado pero firme al hablar de multas o mora."
     )
     
-    if meses_mora == 0 or meses_mora == 1:
+    if tipo == "leve":
         user_prompt = (
-            f"Saluda de forma cordial y estructurada a {propietario} (Inmueble: {apartamento}). "
-            f"Avísale amigablemente con varios emojis que su estado actual de mora es de {meses_mora} mes(es) por un saldo de ${saldo:,.2f}. "
-            f"Tómate un par de oraciones para recordarle lo importante que es pagar a tiempo para mantener hermosa la copropiedad y sus torres. "
+            "Saluda de forma cordial usando EXACTAMENTE el marcador [PROPIETARIO] y refiérete al inmueble usando el marcador [APARTAMENTO]. "
+            "Notifícale su estado actual usando negritas de WhatsApp (encerra en asteriscos) y EN FORMA DE LISTA, usando estos marcadores obligatoriamente (NO inventes números):\n"
+            "• *Saldo Pendiente:* $[SALDO]\n"
+            "• *Tiempo en Mora:* [MESES_MORA] mes(es)\n\n"
+            f"Recuérdale en una breve oración lo importante que es pagar a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
             f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
         )
     else:
         user_prompt = (
-            f"Contacta seriamente pero con amabilidad a {propietario} (Inmueble: {apartamento}). "
-            f"Notifícale de manera clara (inyectando algunos emojis) que presenta {meses_mora} meses de mora, con un acumulado a pagar de ${saldo:,.2f}. "
-            f"Explícale la urgencia de regularizar su situación y las ventajas de estar al día para el buen funcionamiento de la Propiedad Horizontal. "
+            "Contacta seriamente y con amabilidad usando EXACTAMENTE la palabra [PROPIETARIO] y menciona el inmueble como [APARTAMENTO]. "
+            "Notifícale la deuda usando negritas de WhatsApp (asteriscos) y EN FORMA DE LISTA CLARA, usando estos marcadores (NO inventes números):\n"
+            "• *Saldo Acumulado:* $[SALDO]\n"
+            "• *Meses de Mora:* [MESES_MORA] mes(es)\n\n"
+            f"Explícale urgentemente la necesidad de regularizar la situación para el funcionamiento de la Propiedad Horizontal y evitar molestias posteriores. "
             f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
         )
 
@@ -90,11 +95,11 @@ async def generate_cobro_with_groq(apartamento: str, propietario: str, saldo: fl
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3,
-            max_tokens=250
+            temperature=0.1,
+            max_tokens=180
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
-        print(f"Error generando cobro con Groq para apto {apartamento}: {e}")
-        return (f"Estimado(a) {propietario} (Apto {apartamento}), presenta un saldo pendiente de "
+        print(f"Error generando plantilla de cobro con Groq ({tipo}): {e}")
+        return (f"Estimado(a) [PROPIETARIO] (Apto [APARTAMENTO]), presenta un saldo pendiente de "
                 f"${saldo:,.2f}. Por favor, agradecemos su pronto pago.")
