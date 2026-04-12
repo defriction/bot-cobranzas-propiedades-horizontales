@@ -49,9 +49,11 @@ async def procesar_recordatorios():
             
             if telefono and enviar_mensaje == 'TRUE':
                 print(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
-                cuerpo_ia = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
                 
-                mensaje_final = f"{cuerpo_ia}\n\n" \
+                saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacán. 👋\n"
+                
+                mensaje_final = f"{saludo}\n" \
+                                f"{plantilla}\n\n" \
                                 "• *Fecha Límite:* Hasta el día 10 del mes\n" \
                                 "• *Beneficio:* 10% de descuento\n\n" \
                                 "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
@@ -107,9 +109,10 @@ async def procesar_cobros():
                 plantilla_base = plantilla_leve if meses_mora <= 1 else plantilla_grave
                 saldo_formateado = f"{saldo:,.2f}"
                 
-                cuerpo_ia = plantilla_base.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
+                saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacán. 👋\n"
                 
-                mensaje_final = f"{cuerpo_ia}\n\n" \
+                mensaje_final = f"{saludo}\n" \
+                                f"{plantilla_base}\n\n" \
                                 f"• *Saldo Pendiente:* ${saldo_formateado}\n" \
                                 f"• *Tiempo en Mora:* {meses_mora} mes(es)\n\n" \
                                 "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
@@ -161,9 +164,11 @@ async def procesar_felicitaciones():
                 
             if saldo == 0 and meses_mora == 0 and telefono and enviar_mensaje == 'TRUE':
                 print(f"Fase 3 (Felicitación) -> Apto {apartamento} | {propietario}")
-                cuerpo_ia = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
                 
-                mensaje_final = f"{cuerpo_ia}\n\n" \
+                saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacán. 👋\n"
+                
+                mensaje_final = f"{saludo}\n" \
+                                f"{plantilla}\n\n" \
                                 "• *Estado de Cuenta:* Al día ✅\n" \
                                 "• *Saldo Pendiente:* $0.00\n" \
                                 "• *Tiempo en Mora:* 0 mes(es)\n\n" \

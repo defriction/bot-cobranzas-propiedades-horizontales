@@ -15,20 +15,19 @@ async def generate_recordatorio_with_groq() -> str:
     Fase 1: Genera un mensaje de recordatorio general de pronto pago usando plantilla.
     """
     if not groq_client:
-        return "Estimado(a) [PROPIETARIO] del apto [APARTAMENTO], recuerde pagar su administración antes del día 10 para disfrutar de un 10% de descuento."
+        return "Le recordamos pagar su administración antes del día 10 para disfrutar de su beneficio."
         
     system_prompt = (
-        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (la cual está conformada por múltiples torres y edificios). "
+        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
         "Redacta textos amables, concisos y bien estructurados (máximo 1 párrafo corto o 3 oraciones). "
         "Usa emojis amigables y variados en WhatsApp (ej. 👋, 🏢, ✨, 📱). "
-        "Regla estricta 1: El descuento es EXACTAMENTE del 10% y la fecha límite es EXACTAMENTE el día 10 del mes. PROHIBIDO alterar estos números. NUNCA menciones saldos. "
-        "Regla estricta 2: Mantén un lenguaje institucional, corporativo y respetuoso. NUNCA asumas situaciones personales ni propongas qué hacer con el dinero ahorrado (cero menciones a viajes, cine, playa, etc)."
+        "Regla estricta 1: NUNCA menciones saldos ni fechas. "
+        "Regla estricta 2: Mantén un lenguaje institucional, corporativo y respetuoso."
     )
     
     user_prompt = (
-        "Saluda amablemente a la persona usando EXACTAMENTE la palabra [PROPIETARIO]. Menciona explícitamente que el apartamento [APARTAMENTO] es de su propiedad y que este se encuentra en el conjunto residencial Arboreto Guayacán. No modifiques los corchetes. "
-        "Escríbele un párrafo persuasivo y con emojis recordando el beneficio de pronto pago de forma corporativa. "
-        "PROHIBIDO: No le des consejos de vida, no hables de vacaciones, y NUNCA generes listas ni números, ni firmas. Solo devuelve el saludo inicial y el párrafo persuasivo."
+        "Escribe un solo párrafo persuasivo y con emojis recordando el beneficio de pronto pago de forma corporativa. "
+        "PROHIBIDO: No incluyas saludos (Hola, Estimado), nombres de propietarios, apartamentos, despedidas, listas ni números. Tu única tarea es escribir el texto central persuasivo."
     )
 
     try:
@@ -44,8 +43,7 @@ async def generate_recordatorio_with_groq() -> str:
         return completion.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error generando plantilla recordatorio con Groq: {e}")
-        return (f"Estimado(a) [PROPIETARIO] del Apto [APARTAMENTO], le recordamos amablemente que si realiza "
-                f"su pago de administración antes del 10 del presente mes, podrá disfrutar del 10% de descuento. ¡Gracias!")
+        return "Le recordamos amablemente que si realiza su pago de administración a tiempo podrá disfrutar del descuento. ¡Gracias!"
 
 # ===============================================
 # FASE 2: GESTIÓN DE COBRANZA Y MORA
@@ -56,7 +54,7 @@ async def generate_cobro_with_groq(tipo: str) -> str:
     tipo puede ser 'leve' (0-1 meses) o 'grave' (2+ meses).
     """
     if not groq_client:
-        return f"Estimado(a) [PROPIETARIO] del apto [APARTAMENTO], recuerde su saldo de $[SALDO]."
+        return "Le solicitamos amablemente revisar su estado de cuenta para ponerse al día."
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán' (conformada por múltiples torres y edificios). "
@@ -67,15 +65,13 @@ async def generate_cobro_with_groq(tipo: str) -> str:
     
     if tipo == "leve":
         user_prompt = (
-            "Saluda de forma cordial usando EXACTAMENTE el marcador [PROPIETARIO]. Dirígete a él mencionando de forma literal que el apartamento [APARTAMENTO] es de su propiedad y está ubicado dentro del conjunto Arboreto Guayacán. "
-            "Escribe un breve párrafo recordándole amablemente la importancia de pagar la administración a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
-            "PROHIBIDO: NUNCA incluyas números, saldos, meses de mora, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo amigable."
+            "Escribe un solo párrafo recordándole amablemente a un deudor la importancia de pagar la administración a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
+            "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números, saldos o listas. Ve directo al grano con el pequeño párrafo."
         )
     else:
         user_prompt = (
-            "Contacta seriamente y con amabilidad usando EXACTAMENTE la palabra [PROPIETARIO]. Dirígete a él mencionando explícitamente que es propietario del inmueble [APARTAMENTO] en el conjunto residencial Arboreto Guayacán. "
-            "Escribe un párrafo explicándole URGENTEMENTE la necesidad de regularizar su situación de deudas para el funcionamiento de la Propiedad Horizontal y evitar molestias mayores. "
-            "PROHIBIDO: NUNCA incluyas números, saldos, meses de mora, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo contundente con algunos emojis serios."
+            "Escribe un solo párrafo explicándole URGENTEMENTE a un deudor moroso la necesidad de regularizar su situación financiera para el mantenimiento de la Propiedad Horizontal y evitar problemas. "
+            "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números, saldos o listas. Escribe solo el texto estricto."
         )
 
     try:
@@ -86,13 +82,12 @@ async def generate_cobro_with_groq(tipo: str) -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=180
+            max_tokens=250
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error generando plantilla de cobro con Groq ({tipo}): {e}")
-        return (f"Estimado(a) [PROPIETARIO] (Apto [APARTAMENTO]), presenta un saldo pendiente de "
-                f"${saldo:,.2f}. Por favor, agradecemos su pronto pago.")
+        return "Por favor, lo invitamos a ponerse al corriente con sus obligaciones administrativas."
 
 # ===============================================
 # FASE 3: FELICITACIÓN (SALDO CERO)
@@ -102,7 +97,7 @@ async def generate_felicitacion_with_groq() -> str:
     Fase 3: Genera un mensaje de felicitación a usar como plantilla.
     """
     if not groq_client:
-        return "Estimado(a) [PROPIETARIO] del apto [APARTAMENTO], felicitaciones por estar al día con sus pagos."
+        return "Le agradecemos profundamente por estar al día con sus pagos."
         
     system_prompt = (
         "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
@@ -112,9 +107,8 @@ async def generate_felicitacion_with_groq() -> str:
     )
     
     user_prompt = (
-        "Saluda muy cálidamente usando EXACTAMENTE el marcador [PROPIETARIO]. Hazle saber de forma explícita que el apartamento [APARTAMENTO] es su propiedad dentro del conjunto residencial Arboreto Guayacán. No modifiques los marcadores en corchetes ni agregues nombres inventados. "
-        "Escríbele un párrafo agradeciéndole sinceramente por estar al día con sus aportes de administración (cero mora). Resalta cómo su pago puntual ayuda a mantener hermosa la copropiedad. "
-        "PROHIBIDO: NUNCA incluyas números, saldos, meses, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo de agradecimiento."
+        "Escribe un solo párrafo agradeciéndole sinceramente a un residente por estar perfectamente al día con sus aportes de administración (cero mora). Resalta cómo su pago puntual ayuda a mantener en excelentes condiciones la copropiedad. "
+        "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números o firmas finales. Entra directo al párrafo de celebración."
     )
 
     try:
@@ -125,10 +119,9 @@ async def generate_felicitacion_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.2,
-            max_tokens=150
+            max_tokens=250
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error generando plantilla de felicitación con Groq: {e}")
-        return (f"Estimado(a) [PROPIETARIO] del Apto [APARTAMENTO], le agradecemos profundamente por estar al día "
-                f"con sus obligaciones. Su puntualidad ayuda a nuestra Propiedad Horizontal. ¡Gracias!")
+        return "Agradecemos profundamente su compromiso; su puntualidad con la administración es invaluable."
