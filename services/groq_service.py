@@ -26,7 +26,7 @@ async def generate_recordatorio_with_groq() -> str:
     )
     
     user_prompt = (
-        "Saluda amablemente a la persona usando EXACTAMENTE la palabra [PROPIETARIO] y menciona su inmueble usando EXACTAMENTE la palabra [APARTAMENTO]. No modifiques estos corchetes. "
+        "Saluda amablemente a la persona usando EXACTAMENTE la palabra [PROPIETARIO]. Menciona explícitamente que el apartamento [APARTAMENTO] es de su propiedad y que este se encuentra en el conjunto residencial Arboreto Guayacán. No modifiques los corchetes. "
         "Escríbele un párrafo persuasivo y con emojis recordando el beneficio de pronto pago de forma corporativa. "
         "PROHIBIDO: No le des consejos de vida, no hables de vacaciones, y NUNCA generes listas ni números, ni firmas. Solo devuelve el saludo inicial y el párrafo persuasivo."
     )
@@ -67,13 +67,13 @@ async def generate_cobro_with_groq(tipo: str) -> str:
     
     if tipo == "leve":
         user_prompt = (
-            "Saluda de forma cordial usando EXACTAMENTE el marcador [PROPIETARIO] y refiérete al inmueble usando el marcador [APARTAMENTO]. "
+            "Saluda de forma cordial usando EXACTAMENTE el marcador [PROPIETARIO]. Dirígete a él mencionando de forma literal que el apartamento [APARTAMENTO] es de su propiedad y está ubicado dentro del conjunto Arboreto Guayacán. "
             "Escribe un breve párrafo recordándole amablemente la importancia de pagar la administración a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
             "PROHIBIDO: NUNCA incluyas números, saldos, meses de mora, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo amigable."
         )
     else:
         user_prompt = (
-            "Contacta seriamente y con amabilidad usando EXACTAMENTE la palabra [PROPIETARIO] y menciona el inmueble como [APARTAMENTO]. "
+            "Contacta seriamente y con amabilidad usando EXACTAMENTE la palabra [PROPIETARIO]. Dirígete a él mencionando explícitamente que es propietario del inmueble [APARTAMENTO] en el conjunto residencial Arboreto Guayacán. "
             "Escribe un párrafo explicándole URGENTEMENTE la necesidad de regularizar su situación de deudas para el funcionamiento de la Propiedad Horizontal y evitar molestias mayores. "
             "PROHIBIDO: NUNCA incluyas números, saldos, meses de mora, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo contundente con algunos emojis serios."
         )
@@ -112,7 +112,7 @@ async def generate_felicitacion_with_groq() -> str:
     )
     
     user_prompt = (
-        "Saluda muy cálidamente usando EXACTAMENTE el marcador [PROPIETARIO] y menciona su inmueble como [APARTAMENTO]. No modifiques estos marcadores. "
+        "Saluda muy cálidamente usando EXACTAMENTE el marcador [PROPIETARIO]. Hazle saber de forma explícita que el apartamento [APARTAMENTO] es su propiedad dentro del conjunto residencial Arboreto Guayacán. No modifiques los marcadores en corchetes ni agregues nombres inventados. "
         "Escríbele un párrafo agradeciéndole sinceramente por estar al día con sus aportes de administración (cero mora). Resalta cómo su pago puntual ayuda a mantener hermosa la copropiedad. "
         "PROHIBIDO: NUNCA incluyas números, saldos, meses, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo de agradecimiento."
     )
