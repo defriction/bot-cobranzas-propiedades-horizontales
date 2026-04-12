@@ -38,7 +38,7 @@ async def generate_recordatorio_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=60
+            max_tokens=150
         )
         return completion.choices[0].message.content.strip(' "\'”“')
     except Exception as e:
@@ -82,7 +82,7 @@ async def generate_cobro_with_groq(tipo: str) -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.1,
-            max_tokens=60
+            max_tokens=150
         )
         return completion.choices[0].message.content.strip(' "\'”“')
     except Exception as e:
@@ -119,7 +119,7 @@ async def generate_felicitacion_with_groq() -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.2,
-            max_tokens=60
+            max_tokens=150
         )
         return completion.choices[0].message.content.strip(' "\'”“')
     except Exception as e:
