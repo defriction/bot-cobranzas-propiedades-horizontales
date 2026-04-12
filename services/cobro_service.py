@@ -164,6 +164,9 @@ async def procesar_felicitaciones():
                 cuerpo_ia = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
                 
                 mensaje_final = f"{cuerpo_ia}\n\n" \
+                                "• *Estado de Cuenta:* Al día ✅\n" \
+                                "• *Saldo Pendiente:* $0.00\n" \
+                                "• *Tiempo en Mora:* 0 mes(es)\n\n" \
                                 "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
                                               
                 await send_whatsapp_message(telefono, mensaje_final)
