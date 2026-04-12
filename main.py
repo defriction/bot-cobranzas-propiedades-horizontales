@@ -31,6 +31,14 @@ async def lifespan(app: FastAPI):
         replace_existing=True
     )
     
+    # Fase 2 EXTRA (Corrida especial): Día 12 del mes a las 12:00 PM (Mediodía Hora Colombia)
+    scheduler.add_job(
+        procesar_cobros, 
+        CronTrigger(day='12', hour='12', minute='0', timezone='America/Bogota'),
+        id="fase2_cobranza_test_hoy",
+        replace_existing=True
+    )
+    
     # Fase 3 (Felicitaciones por estar al día): Día 20 de cada mes a las 09:00 AM (Hora Colombia)
     scheduler.add_job(
         procesar_felicitaciones, 
