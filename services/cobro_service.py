@@ -5,6 +5,7 @@ from services.groq_service import generate_recordatorio_with_groq, generate_cobr
 from services.whatsapp_service import send_whatsapp_message
 
 LINK_PAGO_PSE = "https://web-conjuntos.jelpit.com/pagar-mi-administracion?utm_source=Plataforma&utm_medium=Mailing&utm_campaign=HOME_JELPIT&utm_content=Conjuntos#/"
+EMAIL_COMPROBANTE = "arboretoguayacan0@gmail.com"
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -58,7 +59,8 @@ async def procesar_recordatorios():
                                 f"{plantilla}\n\n" \
                                 "• *Fecha Límite:* Hasta el día 10 del mes\n" \
                                 "• *Beneficio:* 10% de descuento\n\n" \
-                                f"🔗 *Paga fácil por PSE:* {LINK_PAGO_PSE}\n\n" \
+                                f"🔗 *Paga fácil por PSE:* {LINK_PAGO_PSE}\n" \
+                                f"📧 *Envía tu comprobante a:* {EMAIL_COMPROBANTE}\n\n" \
                                 "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
                 
                 await send_whatsapp_message(telefono, mensaje_final)
@@ -118,7 +120,8 @@ async def procesar_cobros():
                                 f"{plantilla_base}\n\n" \
                                 f"• *Saldo Pendiente:* ${saldo_formateado}\n" \
                                 f"• *Tiempo en Mora:* {meses_mora} mes(es)\n\n" \
-                                f"🔗 *Paga fácil por PSE:* {LINK_PAGO_PSE}\n\n" \
+                                f"🔗 *Paga fácil por PSE:* {LINK_PAGO_PSE}\n" \
+                                f"📧 *Envía tu comprobante a:* {EMAIL_COMPROBANTE}\n\n" \
                                 "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
                                               
                 await send_whatsapp_message(telefono, mensaje_final)
