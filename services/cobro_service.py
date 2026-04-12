@@ -49,7 +49,13 @@ async def procesar_recordatorios():
             
             if telefono and enviar_mensaje == 'TRUE':
                 print(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
-                mensaje_final = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
+                cuerpo_ia = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
+                
+                mensaje_final = f"{cuerpo_ia}\n\n" \
+                                "• *Fecha Límite:* Hasta el día 10 del mes\n" \
+                                "• *Beneficio:* 10% de descuento\n\n" \
+                                "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
+                
                 await send_whatsapp_message(telefono, mensaje_final)
             else:
                 print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Sin teléfono o 'Enviar_Mensaje' es '{enviar_mensaje}'.")
@@ -101,10 +107,12 @@ async def procesar_cobros():
                 plantilla_base = plantilla_leve if meses_mora <= 1 else plantilla_grave
                 saldo_formateado = f"{saldo:,.2f}"
                 
-                mensaje_final = plantilla_base.replace("[PROPIETARIO]", propietario)\
-                                              .replace("[APARTAMENTO]", apartamento)\
-                                              .replace("[SALDO]", saldo_formateado)\
-                                              .replace("[MESES_MORA]", str(meses_mora))
+                cuerpo_ia = plantilla_base.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
+                
+                mensaje_final = f"{cuerpo_ia}\n\n" \
+                                f"• *Saldo Pendiente:* ${saldo_formateado}\n" \
+                                f"• *Tiempo en Mora:* {meses_mora} mes(es)\n\n" \
+                                "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
                                               
                 await send_whatsapp_message(telefono, mensaje_final)
             elif enviar_mensaje != 'TRUE':
@@ -118,3 +126,53 @@ async def procesar_cobros():
         print("Error: El archivo 'credentials.json' no se encontró.")
     except Exception as e:
         print(f"Error inesperado en Fase 2: {e}")
+
+# ===============================================
+# FASE 3: PROCESAR FELICITACIONES (Saldo 0)
+# ===============================================
+async def procesar_felicitaciones():
+    """Lógica Fase 3: Felicita a residentes con Saldo=0 y Mora=0."""
+    try:
+        data_rows = obtener_datos_sheet()
+        
+        print("Generando Plantilla de Felicitación con IA (1 Sola vez)...")
+        from services.groq_service import generate_felicitacion_with_groq
+        plantilla = await generate_felicitacion_with_groq()
+        
+        for idx, row in enumerate(data_rows, start=2):
+            if len(row) < 5:
+                continue
+                
+            apartamento = row[0].strip()
+            propietario = row[1].strip()
+            telefono = row[2].strip()
+            saldo_str = row[3].strip()
+            mora_str = row[4].strip()
+            
+            # La columna F (Enviar_Mensaje) corresponde al índice 5
+            enviar_mensaje = row[5].strip().upper() if len(row) > 5 else "FALSE"
+            
+            try:
+                saldo_limpio = saldo_str.replace('$', '').replace(',', '').strip()
+                saldo = float(saldo_limpio) if saldo_limpio else 0.0
+                meses_mora = int(mora_str) if mora_str else 0
+            except ValueError:
+                continue
+                
+            if saldo == 0 and meses_mora == 0 and telefono and enviar_mensaje == 'TRUE':
+                print(f"Fase 3 (Felicitación) -> Apto {apartamento} | {propietario}")
+                cuerpo_ia = plantilla.replace("[PROPIETARIO]", propietario).replace("[APARTAMENTO]", apartamento)
+                
+                mensaje_final = f"{cuerpo_ia}\n\n" \
+                                "Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)"
+                                              
+                await send_whatsapp_message(telefono, mensaje_final)
+            elif enviar_mensaje != 'TRUE' and saldo == 0 and meses_mora == 0:
+                print(f"Fase 3: Fila {idx} omitida por bandera 'FALSE'.")
+                
+        print("Finalizado procesamiento de Fase 3 (Felicitaciones).")
+        
+    except FileNotFoundError:
+        print("Error: El archivo 'credentials.json' no se encontró.")
+    except Exception as e:
+        print(f"Error inesperado en Fase 3: {e}")

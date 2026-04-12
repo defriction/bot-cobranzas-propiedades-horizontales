@@ -32,3 +32,19 @@ async def ejecutar_cobro(background_tasks: BackgroundTasks):
         "status": "success",
         "message": "Fase 2 iniciada. El motor de cobranza se está procesando en segundo plano."
     }
+
+@router.get("/run-felicitacion")
+@router.post("/run-felicitacion")
+async def ejecutar_felicitacion(background_tasks: BackgroundTasks):
+    """
+    [FASE 3] Endpoint para disparar el proceso de felicitación a personas con saldo y mora en 0.
+    Se dispara típicamente los días 20 de cada mes.
+    """
+    from services.cobro_service import procesar_felicitaciones
+    print("Recibida petición al webhook /run-felicitacion. Añadiendo a tareas de fondo...")
+    background_tasks.add_task(procesar_felicitaciones)
+    
+    return {
+        "status": "success",
+        "message": "Fase 3 iniciada. El envío de diplomas de felicitaciones se procesa al fondo."
+    }

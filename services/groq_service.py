@@ -27,12 +27,8 @@ async def generate_recordatorio_with_groq() -> str:
     
     user_prompt = (
         "Saluda amablemente a la persona usando EXACTAMENTE la palabra [PROPIETARIO] y menciona su inmueble usando EXACTAMENTE la palabra [APARTAMENTO]. No modifiques estos corchetes. "
-        "Escríbele un mensaje persuasivo y con emojis recordando el beneficio de pronto pago. "
-        "REGLA DE FORMATO: Resalta los números EXACTOS en negritas (asteriscos) EN FORMA DE LISTA:\n"
-        "• *Fecha Límite:* Hasta el día 10 del mes\n"
-        "• *Beneficio:* 10% de descuento\n\n"
-        "Explica los beneficios de forma ESTRICTAMENTE ADMINISTRATIVA. PROHIBIDO MODIFICAR LOS NÚMEROS: SIEMPRE es el día 10 y SIEMPRE es un 10% de descuento. Limítate a ser un asesor corporativo. "
-        "IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
+        "Escríbele un párrafo persuasivo y con emojis recordando el beneficio de pronto pago de forma corporativa. "
+        "PROHIBIDO: No le des consejos de vida, no hables de vacaciones, y NUNCA generes listas ni números, ni firmas. Solo devuelve el saludo inicial y el párrafo persuasivo."
     )
 
     try:
@@ -72,20 +68,14 @@ async def generate_cobro_with_groq(tipo: str) -> str:
     if tipo == "leve":
         user_prompt = (
             "Saluda de forma cordial usando EXACTAMENTE el marcador [PROPIETARIO] y refiérete al inmueble usando el marcador [APARTAMENTO]. "
-            "Notifícale su estado actual usando negritas de WhatsApp (encerra en asteriscos) y EN FORMA DE LISTA, usando estos marcadores obligatoriamente (NO inventes números):\n"
-            "• *Saldo Pendiente:* $[SALDO]\n"
-            "• *Tiempo en Mora:* [MESES_MORA] mes(es)\n\n"
-            f"Recuérdale en una breve oración lo importante que es pagar a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
-            f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
+            "Escribe un breve párrafo recordándole amablemente la importancia de pagar la administración a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
+            "PROHIBIDO: NUNCA incluyas números, saldos, meses de mora, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo amigable."
         )
     else:
         user_prompt = (
             "Contacta seriamente y con amabilidad usando EXACTAMENTE la palabra [PROPIETARIO] y menciona el inmueble como [APARTAMENTO]. "
-            "Notifícale la deuda usando negritas de WhatsApp (asteriscos) y EN FORMA DE LISTA CLARA, usando estos marcadores (NO inventes números):\n"
-            "• *Saldo Acumulado:* $[SALDO]\n"
-            "• *Meses de Mora:* [MESES_MORA] mes(es)\n\n"
-            f"Explícale urgentemente la necesidad de regularizar la situación para el funcionamiento de la Propiedad Horizontal y evitar molestias posteriores. "
-            f"IMPORTANTE: Firma siempre el mensaje al final exactamente como: 'Atentamente, Administración de Arboreto Guayacán y Tesorería. (Este es un mensaje automático, por favor no responder)'."
+            "Escribe un párrafo explicándole URGENTEMENTE la necesidad de regularizar su situación de deudas para el funcionamiento de la Propiedad Horizontal y evitar molestias mayores. "
+            "PROHIBIDO: NUNCA incluyas números, saldos, meses de mora, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo contundente con algunos emojis serios."
         )
 
     try:
@@ -103,3 +93,42 @@ async def generate_cobro_with_groq(tipo: str) -> str:
         print(f"Error generando plantilla de cobro con Groq ({tipo}): {e}")
         return (f"Estimado(a) [PROPIETARIO] (Apto [APARTAMENTO]), presenta un saldo pendiente de "
                 f"${saldo:,.2f}. Por favor, agradecemos su pronto pago.")
+
+# ===============================================
+# FASE 3: FELICITACIÓN (SALDO CERO)
+# ===============================================
+async def generate_felicitacion_with_groq() -> str:
+    """
+    Fase 3: Genera un mensaje de felicitación a usar como plantilla.
+    """
+    if not groq_client:
+        return "Estimado(a) [PROPIETARIO] del apto [APARTAMENTO], felicitaciones por estar al día con sus pagos."
+        
+    system_prompt = (
+        "Eres el asistente de la Propiedad Horizontal 'Arboreto Guayacán'. "
+        "Redacta textos muy amables, felices y concisos (máximo 1 párrafo corto o 3 oraciones). "
+        "Usa emojis amigables y de celebración en WhatsApp (ej. 🎉, 🏢, ✨, 🙌). "
+        "Regla estricta: Mantén un lenguaje institucional y respetuoso. NUNCA asumas situaciones personales."
+    )
+    
+    user_prompt = (
+        "Saluda muy cálidamente usando EXACTAMENTE el marcador [PROPIETARIO] y menciona su inmueble como [APARTAMENTO]. No modifiques estos marcadores. "
+        "Escríbele un párrafo agradeciéndole sinceramente por estar al día con sus aportes de administración (cero mora). Resalta cómo su pago puntual ayuda a mantener hermosa la copropiedad. "
+        "PROHIBIDO: NUNCA incluyas números, saldos, meses, listas o firmas finales. Tu única tarea es devolver el saludo inicial y el párrafo de agradecimiento."
+    )
+
+    try:
+        completion = await groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2,
+            max_tokens=150
+        )
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error generando plantilla de felicitación con Groq: {e}")
+        return (f"Estimado(a) [PROPIETARIO] del Apto [APARTAMENTO], le agradecemos profundamente por estar al día "
+                f"con sus obligaciones. Su puntualidad ayuda a nuestra Propiedad Horizontal. ¡Gracias!")
