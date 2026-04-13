@@ -26,8 +26,8 @@ async def generate_recordatorio_with_groq() -> str:
     )
     
     user_prompt = (
-        "Escribe un solo párrafo persuasivo y con emojis recordando el beneficio de pronto pago de forma corporativa. "
-        "PROHIBIDO: No incluyas saludos (Hola, Estimado), nombres de propietarios, apartamentos, despedidas, listas ni números. Tu única tarea es escribir el texto central persuasivo."
+        "Escribe UNA sola oración persuasiva y muy amigable a modo de RECORDATORIO PREVENTIVO invitando a aprovechar el beneficio de pronto pago de este mes. "
+        "PROHIBIDO: No incluyas saludos (Hola, Estimado), nombres, apartamentos, despedidas, listas ni números. Tu única tarea es escribir el recordatorio sutil."
     )
 
     try:
@@ -65,13 +65,13 @@ async def generate_cobro_with_groq(tipo: str) -> str:
     
     if tipo == "leve":
         user_prompt = (
-            "Escribe un solo párrafo recordándole amablemente a un deudor la importancia de pagar la administración a tiempo para mantener hermosa la copropiedad. Agrega emojis variados. "
-            "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números, saldos o listas. Ve directo al grano con el pequeño párrafo."
+            "Escribe UNA sola oración a modo de AVISO DE COBRO cordial, recordándole al residente que tiene saldos pendientes de administración por pagar. Agrega emojis variados. "
+            "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números, saldos o listas. Ve directo al grano con la solicitud de pago."
         )
     else:
         user_prompt = (
-            "Escribe un solo párrafo explicándole URGENTEMENTE a un deudor moroso la necesidad de regularizar su situación financiera para el mantenimiento de la Propiedad Horizontal y evitar problemas. "
-            "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números, saldos o listas. Escribe solo el texto estricto."
+            "Escribe UNA sola oración a modo de REQUERIMIENTO DE COBRO urgente y estricto, exigiéndole a un deudor moroso regularizar inmediatamente su situación financiera atrasada. "
+            "PROHIBIDO: NUNCA incluyas saludos iniciales, despedidas, nombres, apartamentos, números, saldos o listas."
         )
 
     try:
