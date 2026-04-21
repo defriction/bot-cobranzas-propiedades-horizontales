@@ -1,4 +1,5 @@
 import os
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 # Cargar variables desde el archivo .env si existe
@@ -18,5 +19,10 @@ class Settings:
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", "")
     SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "Administracion Arboreto Guayacan")
+    APP_TIMEZONE_NAME = os.environ.get("APP_TIMEZONE", "America/Bogota")
+    APP_TIMEZONE = ZoneInfo(APP_TIMEZONE_NAME)
+    EMAIL_DAILY_LIMIT = int(os.environ.get("EMAIL_DAILY_LIMIT", "150"))
+    EMAIL_QUEUE_FILE = os.environ.get("EMAIL_QUEUE_FILE", "data/email_queue.json")
+    EMAIL_QUOTA_FILE = os.environ.get("EMAIL_QUOTA_FILE", "data/email_quota_state.json")
 
 settings = Settings()

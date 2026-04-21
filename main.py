@@ -6,6 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from routers.cobro import router as cobro_router
 from services.cobro_service import procesar_recordatorios, procesar_cobros, procesar_felicitaciones
+from services.email_queue_service import procesar_cola_emails
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +46,14 @@ async def lifespan(app: FastAPI):
         procesar_felicitaciones, 
         CronTrigger(day='20', hour='9', minute='0', timezone='America/Bogota'),
         id="fase3_felicitacion",
+        replace_existing=True
+    )
+
+    # Cola de correos: cada dia a las 08:00 AM (Hora Colombia) procesa pendientes
+    scheduler.add_job(
+        procesar_cola_emails,
+        CronTrigger(hour='8', minute='0', timezone='America/Bogota'),
+        id="cola_emails_diaria",
         replace_existing=True
     )
     
