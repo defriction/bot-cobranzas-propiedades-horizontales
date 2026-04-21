@@ -19,6 +19,8 @@ class Settings:
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", "")
     SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "Administracion Arboreto Guayacan")
+    SMTP_REPLY_TO = os.environ.get("SMTP_REPLY_TO", "")
+    SMTP_LIST_UNSUBSCRIBE_EMAIL = os.environ.get("SMTP_LIST_UNSUBSCRIBE_EMAIL", "")
     APP_TIMEZONE_NAME = os.environ.get("APP_TIMEZONE", "America/Bogota")
     APP_TIMEZONE = ZoneInfo(APP_TIMEZONE_NAME)
     EMAIL_DAILY_LIMIT = int(os.environ.get("EMAIL_DAILY_LIMIT", "150"))
