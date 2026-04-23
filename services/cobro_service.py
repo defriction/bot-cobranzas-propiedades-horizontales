@@ -7,7 +7,7 @@ from services.groq_service import generate_cobro_with_groq, generate_recordatori
 from services.whatsapp_service import send_whatsapp_message
 
 LINK_PAGO_PSE = "https://web-conjuntos.jelpit.com/pagar-mi-administracion#/"
-EMAIL_COMPROBANTE = "arboretoguayacan0@gmail.com"
+EMAIL_COMPROBANTE = "arboretoguayacan.contable@gmail.com"
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
