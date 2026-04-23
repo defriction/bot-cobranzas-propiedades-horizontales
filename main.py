@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
 
-    # Fase 2 (Cobranzas con multa/mora): Dia 15 de cada mes a las 09:00 AM (Hora Colombia)
+    # Fase 2 (Cobranzas): Dia 15 de cada mes a las 09:00 AM (Hora Colombia)
     # scheduler.add_job(
     #     procesar_cobros,
     #     CronTrigger(day="15", hour="9", minute="0", timezone="America/Bogota"),

@@ -51,7 +51,7 @@ async def ejecutar_cobro(background_tasks: BackgroundTasks):
 @router.post("/run-felicitacion", dependencies=[Depends(verify_token)])
 async def ejecutar_felicitacion(background_tasks: BackgroundTasks):
     """
-    [FASE 3] Endpoint para disparar el proceso de felicitacion a personas con saldo y mora en 0.
+    [FASE 3] Endpoint para disparar el proceso de felicitacion a personas con saldo en 0.
     """
     from services.cobro_service import procesar_felicitaciones
 

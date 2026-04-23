@@ -65,9 +65,9 @@ async def procesar_recordatorios():
             propietario = row[1].strip()
             telefono = row[2].strip()
 
-            # Columna F: Enviar_Mensaje. Columna G: Correo_Electronico.
-            enviar_mensaje = row[5].strip().upper() if len(row) > 5 else "FALSE"
-            correo = row[6].strip() if len(row) > 6 else ""
+            # Columna E: Enviar_Mensaje. Columna F: Correo_Electronico.
+            enviar_mensaje = row[4].strip().upper() if len(row) > 4 else "FALSE"
+            correo = row[5].strip() if len(row) > 5 else ""
 
             if enviar_mensaje != "TRUE":
                 print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
@@ -106,16 +106,15 @@ async def procesar_recordatorios():
 # FASE 2: PROCESAR COBRANZAS REALES
 # ===============================================
 async def procesar_cobros():
-    """Logica Fase 2: Lee montos y mora. Envia solo a deudores."""
+    """Logica Fase 2: Lee montos y envia solo a deudores (sin Meses_Mora)."""
     try:
         data_rows = obtener_datos_sheet()
 
-        print("Generando plantillas de Cobro con IA (Leve y Grave, solo 2 llamadas)...")
-        plantilla_leve = await generate_cobro_with_groq("leve")
-        plantilla_grave = await generate_cobro_with_groq("grave")
+        print("Generando plantilla de Cobro con IA (1 sola llamada)...")
+        plantilla_cobro = await generate_cobro_with_groq()
 
         for idx, row in enumerate(data_rows, start=2):
-            if len(row) < 5:
+            if len(row) < 4:
                 print(f"Fila {idx} omitida (datos incompletos basicos): {row}")
                 continue
 
@@ -123,16 +122,14 @@ async def procesar_cobros():
             propietario = row[1].strip()
             telefono = row[2].strip()
             saldo_str = row[3].strip()
-            mora_str = row[4].strip()
 
-            # Columna F: Enviar_Mensaje. Columna G: Correo_Electronico.
-            enviar_mensaje = row[5].strip().upper() if len(row) > 5 else "FALSE"
-            correo = row[6].strip() if len(row) > 6 else ""
+            # Columna E: Enviar_Mensaje. Columna F: Correo_Electronico.
+            enviar_mensaje = row[4].strip().upper() if len(row) > 4 else "FALSE"
+            correo = row[5].strip() if len(row) > 5 else ""
 
             try:
                 saldo_limpio = saldo_str.replace("$", "").replace(",", "").strip()
                 saldo = float(saldo_limpio) if saldo_limpio else 0.0
-                meses_mora = int(mora_str) if mora_str else 0
             except ValueError:
                 print(f"Fila {idx} (Apto {apartamento}): Error numerico (Saldo: '{saldo_str}').")
                 continue
@@ -148,18 +145,15 @@ async def procesar_cobros():
                 print(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: debe ${saldo} y no tiene telefono ni Correo_Electronico.")
                 continue
 
-            print(f"Fase 2 (Cobro) -> Apto {apartamento} | Saldo: ${saldo} | Mora: {meses_mora}")
-
-            plantilla_base = plantilla_leve if meses_mora <= 1 else plantilla_grave
+            print(f"Fase 2 (Cobro) -> Apto {apartamento} | Saldo: ${saldo}")
             saldo_formateado = f"{saldo:,.2f}"
 
             saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
 
             mensaje_final = (
                 f"{saludo}\n"
-                f"{plantilla_base}\n\n"
+                f"{plantilla_cobro}\n\n"
                 f"* Saldo Pendiente: ${saldo_formateado}\n"
-                f"* Tiempo en Mora: {meses_mora} mes(es)\n\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
@@ -177,10 +171,10 @@ async def procesar_cobros():
 
 
 # ===============================================
-# FASE 3: PROCESAR FELICITACIONES (Saldo 0)
+# FASE 3: PROCESAR FELICITACIONES (Saldo 0, sin Meses_Mora)
 # ===============================================
 async def procesar_felicitaciones():
-    """Logica Fase 3: Felicita a residentes con Saldo=0 y Mora=0."""
+    """Logica Fase 3: Felicita a residentes con Saldo=0."""
     try:
         data_rows = obtener_datos_sheet()
 
@@ -190,27 +184,25 @@ async def procesar_felicitaciones():
         plantilla = await generate_felicitacion_with_groq()
 
         for idx, row in enumerate(data_rows, start=2):
-            if len(row) < 5:
+            if len(row) < 4:
                 continue
 
             apartamento = row[0].strip()
             propietario = row[1].strip()
             telefono = row[2].strip()
             saldo_str = row[3].strip()
-            mora_str = row[4].strip()
 
-            # Columna F: Enviar_Mensaje. Columna G: Correo_Electronico.
-            enviar_mensaje = row[5].strip().upper() if len(row) > 5 else "FALSE"
-            correo = row[6].strip() if len(row) > 6 else ""
+            # Columna E: Enviar_Mensaje. Columna F: Correo_Electronico.
+            enviar_mensaje = row[4].strip().upper() if len(row) > 4 else "FALSE"
+            correo = row[5].strip() if len(row) > 5 else ""
 
             try:
                 saldo_limpio = saldo_str.replace("$", "").replace(",", "").strip()
                 saldo = float(saldo_limpio) if saldo_limpio else 0.0
-                meses_mora = int(mora_str) if mora_str else 0
             except ValueError:
                 continue
 
-            if saldo != 0 or meses_mora != 0:
+            if saldo != 0:
                 continue
 
             if enviar_mensaje != "TRUE":
@@ -230,7 +222,6 @@ async def procesar_felicitaciones():
                 f"{plantilla}\n\n"
                 "* Estado de Cuenta: Al dia\n"
                 "* Saldo Pendiente: $0.00\n"
-                "* Tiempo en Mora: 0 mes(es)\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
             )
 
