@@ -7,7 +7,6 @@ from fastapi import FastAPI
 
 from routers.cobro import router as cobro_router
 from services.cobro_service import procesar_cobros, procesar_felicitaciones, procesar_recordatorios
-from services.email_queue_service import procesar_cola_emails
 
 
 @asynccontextmanager
@@ -45,14 +44,6 @@ async def lifespan(app: FastAPI):
     #     id="fase3_felicitacion",
     #     replace_existing=True,
     # )
-
-    # Cola de correos: cada dia a las 08:00 AM (Hora Colombia) procesa pendientes.
-    scheduler.add_job(
-        procesar_cola_emails,
-        CronTrigger(hour="8", minute="0", timezone="America/Bogota"),
-        id="cola_emails_diaria",
-        replace_existing=True,
-    )
 
     scheduler.start()
 

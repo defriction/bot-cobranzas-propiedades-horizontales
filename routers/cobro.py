@@ -3,7 +3,6 @@ from fastapi.security import APIKeyHeader, APIKeyQuery
 
 from core.config import settings
 from services.cobro_service import procesar_cobros, procesar_recordatorios
-from services.email_queue_service import procesar_cola_emails
 
 router = APIRouter(tags=["Gestion"])
 
@@ -62,19 +61,4 @@ async def ejecutar_felicitacion(background_tasks: BackgroundTasks):
     return {
         "status": "success",
         "message": "Fase 3 iniciada. El envio de felicitaciones se procesa al fondo.",
-    }
-
-
-@router.get("/run-email-queue", dependencies=[Depends(verify_token)])
-@router.post("/run-email-queue", dependencies=[Depends(verify_token)])
-async def ejecutar_cola_correos(background_tasks: BackgroundTasks):
-    """
-    Procesa la cola de emails pendientes respetando el limite diario configurado.
-    """
-    print("Recibida peticion al webhook /run-email-queue. Anadiendo tarea de fondo...")
-    background_tasks.add_task(procesar_cola_emails)
-
-    return {
-        "status": "success",
-        "message": "Procesamiento de cola de correos iniciado en segundo plano.",
     }

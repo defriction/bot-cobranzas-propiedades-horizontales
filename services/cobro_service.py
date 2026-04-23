@@ -2,7 +2,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 from core.config import settings
-from services.email_queue_service import enqueue_or_send_email
+from services.email_service import send_email_message
 from services.groq_service import generate_cobro_with_groq, generate_recordatorio_with_groq
 from services.whatsapp_service import send_whatsapp_message
 
@@ -39,7 +39,7 @@ async def enviar_notificaciones(telefono: str, correo: str, subject: str, messag
         enviado = True
 
     if correo:
-        await enqueue_or_send_email(correo, subject, message)
+        await send_email_message(correo, subject, message)
         enviado = True
 
     return enviado
