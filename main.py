@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     # Fase 1 (Recordatorios): dias 5 y 10 de cada mes a las 09:00 AM (Hora Colombia).
     scheduler.add_job(
         procesar_recordatorios,
-        CronTrigger(day="1,5,10", hour="9", minute="0", timezone="America/Bogota"),
+        CronTrigger(day="5,9", hour="9", minute="0", timezone="America/Bogota"),
         id="fase1_recordatorio",
         replace_existing=True,
     )
