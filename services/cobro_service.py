@@ -2,6 +2,7 @@ import gspread
 import asyncio
 import math
 import random
+import logging
 from oauth2client.service_account import ServiceAccountCredentials
 
 from core.config import settings
@@ -16,8 +17,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
-RECORDATORIO_BATCH_SIZE = 3
 RECORDATORIO_DISTRIBUTION_HOURS = 6
+RECORDATORIO_MAX_LOTES = 3
+logger = logging.getLogger("uvicorn.error")
 
 
 def obtener_datos_sheet():
@@ -58,14 +60,14 @@ async def procesar_recordatorios():
     try:
         data_rows = obtener_datos_sheet()
 
-        print("Generando plantilla de Recordatorio con IA (1 sola vez)...")
+        logger.info("Fase 1: Generando plantilla de Recordatorio con IA (1 sola vez)...")
         plantilla = await generate_recordatorio_with_groq()
 
         pendientes = []
 
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 3:
-                print(f"Fila {idx} omitida (faltan datos basicos): {row}")
+                logger.warning(f"Fase 1: Fila {idx} omitida (faltan datos basicos): {row}")
                 continue
 
             apartamento = row[0].strip()
@@ -77,11 +79,11 @@ async def procesar_recordatorios():
             correo = row[5].strip() if len(row) > 5 else ""
 
             if enviar_mensaje != "TRUE":
-                print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
+                logger.info(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
                 continue
 
             if not telefono and not correo:
-                print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: sin telefono ni Correo_Electronico.")
+                logger.warning(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: sin telefono ni Correo_Electronico.")
                 continue
 
             saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
@@ -100,16 +102,17 @@ async def procesar_recordatorios():
 
         total = len(pendientes)
         if total == 0:
-            print("Fase 1: No hay destinatarios validos para enviar recordatorio.")
+            logger.warning("Fase 1: No hay destinatarios validos para enviar recordatorio.")
             return
 
-        batch_size = max(1, RECORDATORIO_BATCH_SIZE)
-        total_batches = math.ceil(total / batch_size)
+        # Usamos maximo 3 lotes por corrida para evitar fragmentar demasiado el envio.
+        total_batches = min(RECORDATORIO_MAX_LOTES, total)
+        batch_size = math.ceil(total / total_batches)
         ventana_horas = max(1.0, RECORDATORIO_DISTRIBUTION_HOURS)
         ventana_segundos = int(ventana_horas * 3600)
         espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
 
-        print(
+        logger.info(
             f"Fase 1: {total} envios en {total_batches} lotes de {batch_size}. "
             f"Espera entre lotes: {espera_entre_lotes} segundos."
         )
@@ -119,26 +122,35 @@ async def procesar_recordatorios():
             end = start + batch_size
             lote = pendientes[start:end]
 
-            print(f"Fase 1: Enviando lote {batch_index + 1}/{total_batches} ({len(lote)} mensajes).")
+            logger.info(f"Fase 1: Enviando lote {batch_index + 1}/{total_batches} ({len(lote)} mensajes).")
             for item_index, (apartamento, propietario, telefono, correo, asunto, mensaje_final) in enumerate(lote):
-                print(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
+                logger.info(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
                 await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
 
                 # Pausa aleatoria para que el patron de envios se vea mas organico.
                 es_ultimo_del_lote = item_index == len(lote) - 1
                 es_ultimo_lote = batch_index == total_batches - 1
                 if not (es_ultimo_del_lote and es_ultimo_lote):
-                    await asyncio.sleep(random.randint(10, 20))
+                    espera_random = random.randint(10, 20)
+                    logger.info(
+                        f"Fase 1: Espera aleatoria de {espera_random}s "
+                        f"antes del siguiente envio (lote {batch_index + 1}/{total_batches})."
+                    )
+                    await asyncio.sleep(espera_random)
 
             if batch_index < total_batches - 1 and espera_entre_lotes > 0:
+                logger.info(
+                    f"Fase 1: Espera entre lotes de {espera_entre_lotes}s "
+                    f"antes del lote {batch_index + 2}/{total_batches}."
+                )
                 await asyncio.sleep(espera_entre_lotes)
 
-        print("Finalizado procesamiento de Fase 1 (Recordatorios).")
+        logger.info("Finalizado procesamiento de Fase 1 (Recordatorios).")
 
     except FileNotFoundError:
-        print("Error: El archivo 'credentials.json' no se encontro.")
+        logger.exception("Fase 1: Error: El archivo 'credentials.json' no se encontro.")
     except Exception as exc:
-        print(f"Error inesperado en Fase 1: {exc}")
+        logger.exception(f"Error inesperado en Fase 1: {exc}")
 
 
 # ===============================================
