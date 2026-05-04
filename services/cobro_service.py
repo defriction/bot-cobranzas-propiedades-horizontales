@@ -161,12 +161,12 @@ async def procesar_cobros():
     try:
         data_rows = obtener_datos_sheet()
 
-        print("Generando plantilla de Cobro con IA (1 sola llamada)...")
+        logger.info("Fase 2: Generando plantilla de Cobro con IA (1 sola llamada)...")
         plantilla_cobro = await generate_cobro_with_groq()
 
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 4:
-                print(f"Fila {idx} omitida (datos incompletos basicos): {row}")
+                logger.warning(f"Fase 2: Fila {idx} omitida (datos incompletos basicos): {row}")
                 continue
 
             apartamento = row[0].strip()
@@ -182,21 +182,21 @@ async def procesar_cobros():
                 saldo_limpio = saldo_str.replace("$", "").replace(",", "").strip()
                 saldo = float(saldo_limpio) if saldo_limpio else 0.0
             except ValueError:
-                print(f"Fila {idx} (Apto {apartamento}): Error numerico (Saldo: '{saldo_str}').")
+                logger.warning(f"Fase 2: Fila {idx} (Apto {apartamento}): Error numerico (Saldo: '{saldo_str}').")
                 continue
 
             if saldo <= 0:
                 continue
 
             if enviar_mensaje != "TRUE":
-                print(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
+                logger.info(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
                 continue
 
             if not telefono and not correo:
-                print(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: debe ${saldo} y no tiene telefono ni Correo_Electronico.")
+                logger.warning(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: debe ${saldo} y no tiene telefono ni Correo_Electronico.")
                 continue
 
-            print(f"Fase 2 (Cobro) -> Apto {apartamento} | Saldo: ${saldo}")
+            logger.info(f"Fase 2 (Cobro) -> Apto {apartamento} | Saldo: ${saldo}")
             saldo_formateado = f"{saldo:,.2f}"
 
             saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
@@ -213,12 +213,12 @@ async def procesar_cobros():
             asunto = f"Cobro de administracion - Apto {apartamento}"
             await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
 
-        print("Finalizado procesamiento de Fase 2 (Cobranza).")
+        logger.info("Finalizado procesamiento de Fase 2 (Cobranza).")
 
     except FileNotFoundError:
-        print("Error: El archivo 'credentials.json' no se encontro.")
+        logger.exception("Fase 2: Error: El archivo 'credentials.json' no se encontro.")
     except Exception as exc:
-        print(f"Error inesperado en Fase 2: {exc}")
+        logger.exception(f"Error inesperado en Fase 2: {exc}")
 
 
 # ===============================================
@@ -229,7 +229,7 @@ async def procesar_felicitaciones():
     try:
         data_rows = obtener_datos_sheet()
 
-        print("Generando plantilla de Felicitacion con IA (1 sola vez)...")
+        logger.info("Fase 3: Generando plantilla de Felicitacion con IA (1 sola vez)...")
         from services.groq_service import generate_felicitacion_with_groq
 
         plantilla = await generate_felicitacion_with_groq()
@@ -257,14 +257,14 @@ async def procesar_felicitaciones():
                 continue
 
             if enviar_mensaje != "TRUE":
-                print(f"Fase 3: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
+                logger.info(f"Fase 3: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
                 continue
 
             if not telefono and not correo:
-                print(f"Fase 3: Fila {idx} (Apto {apartamento}) omitida: sin telefono ni Correo_Electronico.")
+                logger.warning(f"Fase 3: Fila {idx} (Apto {apartamento}) omitida: sin telefono ni Correo_Electronico.")
                 continue
 
-            print(f"Fase 3 (Felicitacion) -> Apto {apartamento} | {propietario}")
+            logger.info(f"Fase 3 (Felicitacion) -> Apto {apartamento} | {propietario}")
 
             saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
 
@@ -279,9 +279,9 @@ async def procesar_felicitaciones():
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
             await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
 
-        print("Finalizado procesamiento de Fase 3 (Felicitaciones).")
+        logger.info("Finalizado procesamiento de Fase 3 (Felicitaciones).")
 
     except FileNotFoundError:
-        print("Error: El archivo 'credentials.json' no se encontro.")
+        logger.exception("Fase 3: Error: El archivo 'credentials.json' no se encontro.")
     except Exception as exc:
-        print(f"Error inesperado en Fase 3: {exc}")
+        logger.exception(f"Error inesperado en Fase 3: {exc}")
