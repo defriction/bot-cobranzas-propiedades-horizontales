@@ -1,4 +1,7 @@
 import gspread
+import asyncio
+import math
+import random
 from oauth2client.service_account import ServiceAccountCredentials
 
 from core.config import settings
@@ -13,6 +16,8 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
+RECORDATORIO_BATCH_SIZE = 3
+RECORDATORIO_DISTRIBUTION_HOURS = 6
 
 
 def obtener_datos_sheet():
@@ -56,6 +61,8 @@ async def procesar_recordatorios():
         print("Generando plantilla de Recordatorio con IA (1 sola vez)...")
         plantilla = await generate_recordatorio_with_groq()
 
+        pendientes = []
+
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 3:
                 print(f"Fila {idx} omitida (faltan datos basicos): {row}")
@@ -77,10 +84,7 @@ async def procesar_recordatorios():
                 print(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: sin telefono ni Correo_Electronico.")
                 continue
 
-            print(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
-
             saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
-
             mensaje_final = (
                 f"{saludo}\n"
                 f"{plantilla}\n\n"
@@ -90,9 +94,44 @@ async def procesar_recordatorios():
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
             )
-
             asunto = f"Recordatorio de administracion - Apto {apartamento}"
-            await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
+
+            pendientes.append((apartamento, propietario, telefono, correo, asunto, mensaje_final))
+
+        total = len(pendientes)
+        if total == 0:
+            print("Fase 1: No hay destinatarios validos para enviar recordatorio.")
+            return
+
+        batch_size = max(1, RECORDATORIO_BATCH_SIZE)
+        total_batches = math.ceil(total / batch_size)
+        ventana_horas = max(1.0, RECORDATORIO_DISTRIBUTION_HOURS)
+        ventana_segundos = int(ventana_horas * 3600)
+        espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
+
+        print(
+            f"Fase 1: {total} envios en {total_batches} lotes de {batch_size}. "
+            f"Espera entre lotes: {espera_entre_lotes} segundos."
+        )
+
+        for batch_index in range(total_batches):
+            start = batch_index * batch_size
+            end = start + batch_size
+            lote = pendientes[start:end]
+
+            print(f"Fase 1: Enviando lote {batch_index + 1}/{total_batches} ({len(lote)} mensajes).")
+            for item_index, (apartamento, propietario, telefono, correo, asunto, mensaje_final) in enumerate(lote):
+                print(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
+                await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
+
+                # Pausa aleatoria para que el patron de envios se vea mas organico.
+                es_ultimo_del_lote = item_index == len(lote) - 1
+                es_ultimo_lote = batch_index == total_batches - 1
+                if not (es_ultimo_del_lote and es_ultimo_lote):
+                    await asyncio.sleep(random.randint(10, 20))
+
+            if batch_index < total_batches - 1 and espera_entre_lotes > 0:
+                await asyncio.sleep(espera_entre_lotes)
 
         print("Finalizado procesamiento de Fase 1 (Recordatorios).")
 
