@@ -86,10 +86,9 @@ async def procesar_recordatorios():
                 logger.warning(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: sin telefono ni Correo_Electronico.")
                 continue
 
-            saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
+            saludo = f"Hola {propietario}, apto {apartamento}.\n"
             mensaje_final = (
-                f"{saludo}\n"
-                f"{plantilla}\n\n"
+                f"{saludo}{plantilla}\n\n"
                 "* Descuento: 10% por pago el 10 de cada mes antes de las 4:00 PM\n"
                 "* Condicion: Debe estar al dia (saldo en $0) para aplicar el descuento\n"
                 "* Importante: El descuento no aplica sobre deudas de periodos pasados\n\n"
