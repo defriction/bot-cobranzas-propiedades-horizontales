@@ -154,7 +154,7 @@ async def procesar_recordatorios():
 
 
 # ===============================================
-# FASE 2: PROCESAR COBRANZAS REALES
+# FASE 2: PROCESAR COBRANZAS REALES (Con Saldo > 0, sin Meses_Mora)
 # ===============================================
 async def procesar_cobros():
     """Logica Fase 2: Lee montos y envia solo a deudores (sin Meses_Mora)."""
