@@ -90,8 +90,9 @@ async def procesar_recordatorios():
             mensaje_final = (
                 f"{saludo}\n"
                 f"{plantilla}\n\n"
-                "* Fecha Limite: Hasta el dia 10 del mes\n"
-                "* Beneficio: 10% de descuento\n\n"
+                "* Descuento: 10% por pago el 10 de cada mes antes de las 4:00 PM\n"
+                "* Condicion: Debe estar al dia (saldo en $0) para aplicar el descuento\n"
+                "* Importante: El descuento no aplica sobre deudas de periodos pasados\n\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
