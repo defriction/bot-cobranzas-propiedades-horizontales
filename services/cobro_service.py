@@ -17,12 +17,12 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
-RECORDATORIO_DISTRIBUTION_HOURS = 6
-RECORDATORIO_MAX_LOTES = 8
-COBRO_DISTRIBUTION_HOURS = 4
-COBRO_MAX_LOTES = 6
-FELICITACION_DISTRIBUTION_HOURS = 2
-FELICITACION_MAX_LOTES = 4
+RECORDATORIO_DISTRIBUTION_HOURS = 24
+RECORDATORIO_MAX_LOTES = 15
+COBRO_DISTRIBUTION_HOURS = 18
+COBRO_MAX_LOTES = 12
+FELICITACION_DISTRIBUTION_HOURS = 12
+FELICITACION_MAX_LOTES = 8
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -162,7 +162,8 @@ async def procesar_recordatorios():
                 "* Importante: El descuento no aplica sobre deudas de periodos pasados\n\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
-                "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
+                "Atentamente, Administracion de Arboreto Guayacan.\n"
+                "👉 *Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. ¡Gracias!*"
             )
             asunto = f"Recordatorio de administracion - Apto {apartamento}"
 
@@ -199,7 +200,7 @@ async def procesar_recordatorios():
                 es_ultimo_del_lote = item_index == len(lote) - 1
                 es_ultimo_lote = batch_index == total_batches - 1
                 if not (es_ultimo_del_lote and es_ultimo_lote):
-                    espera_random = random.randint(45, 90)
+                    espera_random = random.randint(90, 180)
                     logger.info(
                         f"Fase 1: Espera aleatoria de {espera_random}s "
                         f"antes del siguiente envio (lote {batch_index + 1}/{total_batches})."
@@ -287,7 +288,8 @@ async def procesar_cobros():
                 f"* Saldo Pendiente: ${saldo_formateado}\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
-                "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
+                "Atentamente, Administracion y Tesoreria.\n"
+                "👉 *Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
             )
 
             asunto = f"Cobro de administracion - Apto {apartamento}"
@@ -321,7 +323,7 @@ async def procesar_cobros():
                 es_ultimo_del_lote = item_index == len(lote) - 1
                 es_ultimo_lote = batch_index == total_batches - 1
                 if not (es_ultimo_del_lote and es_ultimo_lote):
-                    espera_random = random.randint(45, 90)
+                    espera_random = random.randint(90, 180)
                     logger.info(f"Fase 2: Espera aleatoria de {espera_random}s para proteger el numero...")
                     await asyncio.sleep(espera_random)
 
@@ -401,7 +403,8 @@ async def procesar_felicitaciones():
                 f"{plantilla}\n\n"
                 "* Estado de Cuenta: Al dia\n"
                 "* Saldo Pendiente: $0.00\n"
-                "Atentamente, Administracion de Arboreto Guayacan y Tesoreria. (Este es un mensaje automatico, por favor no responder)"
+                "Atentamente, Administracion y Tesoreria.\n"
+                "👉 *¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* 🎉"
             )
 
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
@@ -435,7 +438,7 @@ async def procesar_felicitaciones():
                 es_ultimo_del_lote = item_index == len(lote) - 1
                 es_ultimo_lote = batch_index == total_batches - 1
                 if not (es_ultimo_del_lote and es_ultimo_lote):
-                    espera_random = random.randint(45, 90)
+                    espera_random = random.randint(90, 180)
                     logger.info(f"Fase 3: Espera aleatoria de {espera_random}s para proteger el numero...")
                     await asyncio.sleep(espera_random)
 
