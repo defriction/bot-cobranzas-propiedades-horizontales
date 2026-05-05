@@ -13,10 +13,10 @@ from services.cobro_service import procesar_cobros, procesar_felicitaciones, pro
 async def lifespan(app: FastAPI):
     scheduler = AsyncIOScheduler()
 
-    # Fase 1 (Recordatorios): dias 5 y 10 de cada mes a las 09:00 AM (Hora Colombia).
+    # Fase 1 (Recordatorios): dia 5 de cada mes a las 09:00 AM (Hora Colombia).
     scheduler.add_job(
         procesar_recordatorios,
-        CronTrigger(day="5,9", hour="9", minute="0", timezone="America/Bogota"),
+        CronTrigger(day="5", hour="9", minute="0", timezone="America/Bogota"),
         id="fase1_recordatorio",
         replace_existing=True,
     )

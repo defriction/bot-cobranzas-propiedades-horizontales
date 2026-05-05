@@ -18,7 +18,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 RECORDATORIO_DISTRIBUTION_HOURS = 6
-RECORDATORIO_MAX_LOTES = 3
+RECORDATORIO_MAX_LOTES = 8
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -189,7 +189,7 @@ async def procesar_recordatorios():
                 es_ultimo_del_lote = item_index == len(lote) - 1
                 es_ultimo_lote = batch_index == total_batches - 1
                 if not (es_ultimo_del_lote and es_ultimo_lote):
-                    espera_random = random.randint(10, 20)
+                    espera_random = random.randint(20, 40)
                     logger.info(
                         f"Fase 1: Espera aleatoria de {espera_random}s "
                         f"antes del siguiente envio (lote {batch_index + 1}/{total_batches})."
