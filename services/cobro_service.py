@@ -19,6 +19,10 @@ SCOPES = [
 ]
 RECORDATORIO_DISTRIBUTION_HOURS = 6
 RECORDATORIO_MAX_LOTES = 8
+COBRO_DISTRIBUTION_HOURS = 4
+COBRO_MAX_LOTES = 6
+FELICITACION_DISTRIBUTION_HOURS = 2
+FELICITACION_MAX_LOTES = 4
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -90,11 +94,17 @@ async def enviar_notificaciones_safe_mode(
                         estado_corrida["safe_mode_activated"] = True
                         estado_corrida["safe_mode_reason"] = error_type
                         estado_corrida["safe_mode_phone"] = telefono
-                        logger.warning(
-                            "SAFE MODE WhatsApp activado en esta corrida. "
-                            f"Motivo={error_type} primer_numero={telefono}. "
-                            "Se continuara solo por email."
+                        
+                        mensaje_alerta = (
+                            f"🚨 SAFE MODE WhatsApp activado. Motivo={error_type} al intentar enviar a {telefono}. "
+                            "Se continuara el proceso SOLO por EMAIL."
                         )
+                        if error_type == "connection_closed":
+                            mensaje_alerta += " ⚠️ ACCIÓN REQUERIDA: Ve a Evolution API y reconecta el código QR. La instancia se desconectó."
+                        elif error_type == "restricted":
+                            mensaje_alerta += " ⚠️ ALERTA GRAVE: Meta ha restringido la cuenta de WhatsApp. Ve a la app en el celular y presiona 'Solicitar Revisión'."
+                            
+                        logger.warning(mensaje_alerta)
         else:
             estado_corrida["whatsapp_skipped_safe_mode"] += 1
 
@@ -189,7 +199,7 @@ async def procesar_recordatorios():
                 es_ultimo_del_lote = item_index == len(lote) - 1
                 es_ultimo_lote = batch_index == total_batches - 1
                 if not (es_ultimo_del_lote and es_ultimo_lote):
-                    espera_random = random.randint(20, 40)
+                    espera_random = random.randint(45, 90)
                     logger.info(
                         f"Fase 1: Espera aleatoria de {espera_random}s "
                         f"antes del siguiente envio (lote {batch_index + 1}/{total_batches})."
@@ -231,6 +241,8 @@ async def procesar_cobros():
 
         logger.info("Fase 2: Generando plantilla de Cobro con IA (1 sola llamada)...")
         plantilla_cobro = await generate_cobro_with_groq()
+
+        pendientes = []
 
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 4:
@@ -279,7 +291,43 @@ async def procesar_cobros():
             )
 
             asunto = f"Cobro de administracion - Apto {apartamento}"
-            await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
+            pendientes.append((apartamento, propietario, telefono, correo, asunto, mensaje_final))
+
+        total = len(pendientes)
+        if total == 0:
+            logger.warning("Fase 2: No hay destinatarios validos para enviar cobros.")
+            return
+
+        total_batches = min(COBRO_MAX_LOTES, total)
+        batch_size = math.ceil(total / total_batches)
+        ventana_horas = max(1.0, COBRO_DISTRIBUTION_HOURS)
+        ventana_segundos = int(ventana_horas * 3600)
+        espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
+
+        logger.info(
+            f"Fase 2: {total} envios en {total_batches} lotes de {batch_size}. "
+            f"Espera larga entre lotes: {espera_entre_lotes} segundos."
+        )
+
+        for batch_index in range(total_batches):
+            start = batch_index * batch_size
+            end = start + batch_size
+            lote = pendientes[start:end]
+
+            logger.info(f"Fase 2: Enviando lote {batch_index + 1}/{total_batches} ({len(lote)} mensajes).")
+            for item_index, (apartamento, propietario, telefono, correo, asunto, mensaje_final) in enumerate(lote):
+                await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
+
+                es_ultimo_del_lote = item_index == len(lote) - 1
+                es_ultimo_lote = batch_index == total_batches - 1
+                if not (es_ultimo_del_lote and es_ultimo_lote):
+                    espera_random = random.randint(45, 90)
+                    logger.info(f"Fase 2: Espera aleatoria de {espera_random}s para proteger el numero...")
+                    await asyncio.sleep(espera_random)
+
+            if batch_index < total_batches - 1 and espera_entre_lotes > 0:
+                logger.info(f"Fase 2: Descanso de {espera_entre_lotes}s antes del lote {batch_index + 2}/{total_batches}.")
+                await asyncio.sleep(espera_entre_lotes)
 
         logger.info(
             "Finalizado procesamiento de Fase 2 (Cobranza). "
@@ -311,6 +359,8 @@ async def procesar_felicitaciones():
         from services.groq_service import generate_felicitacion_with_groq
 
         plantilla = await generate_felicitacion_with_groq()
+
+        pendientes = []
 
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 4:
@@ -355,7 +405,43 @@ async def procesar_felicitaciones():
             )
 
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
-            await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
+            pendientes.append((apartamento, propietario, telefono, correo, asunto, mensaje_final))
+
+        total = len(pendientes)
+        if total == 0:
+            logger.warning("Fase 3: No hay destinatarios validos para enviar felicitaciones.")
+            return
+
+        total_batches = min(FELICITACION_MAX_LOTES, total)
+        batch_size = math.ceil(total / total_batches)
+        ventana_horas = max(1.0, FELICITACION_DISTRIBUTION_HOURS)
+        ventana_segundos = int(ventana_horas * 3600)
+        espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
+
+        logger.info(
+            f"Fase 3: {total} envios en {total_batches} lotes de {batch_size}. "
+            f"Espera larga entre lotes: {espera_entre_lotes} segundos."
+        )
+
+        for batch_index in range(total_batches):
+            start = batch_index * batch_size
+            end = start + batch_size
+            lote = pendientes[start:end]
+
+            logger.info(f"Fase 3: Enviando lote {batch_index + 1}/{total_batches} ({len(lote)} mensajes).")
+            for item_index, (apartamento, propietario, telefono, correo, asunto, mensaje_final) in enumerate(lote):
+                await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
+
+                es_ultimo_del_lote = item_index == len(lote) - 1
+                es_ultimo_lote = batch_index == total_batches - 1
+                if not (es_ultimo_del_lote and es_ultimo_lote):
+                    espera_random = random.randint(45, 90)
+                    logger.info(f"Fase 3: Espera aleatoria de {espera_random}s para proteger el numero...")
+                    await asyncio.sleep(espera_random)
+
+            if batch_index < total_batches - 1 and espera_entre_lotes > 0:
+                logger.info(f"Fase 3: Descanso de {espera_entre_lotes}s antes del lote {batch_index + 2}/{total_batches}.")
+                await asyncio.sleep(espera_entre_lotes)
 
         logger.info(
             "Finalizado procesamiento de Fase 3 (Felicitaciones). "

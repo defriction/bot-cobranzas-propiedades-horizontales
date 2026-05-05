@@ -1,6 +1,9 @@
+import logging
 from groq import AsyncGroq
 
 from core.config import settings
+
+logger = logging.getLogger("uvicorn.error")
 
 
 if settings.GROQ_API_KEY:
@@ -42,7 +45,7 @@ async def generate_recordatorio_with_groq() -> str:
         )
         return completion.choices[0].message.content.strip(' "\'')
     except Exception as exc:
-        print(f"Error generando plantilla recordatorio con Groq: {exc}")
+        logger.error(f"Error generando plantilla recordatorio con Groq: {exc}")
         return "Le recordamos amablemente que el pronto pago le permite mantener sus beneficios. Gracias."
 
 
@@ -76,7 +79,7 @@ async def generate_cobro_with_groq() -> str:
         )
         return completion.choices[0].message.content.strip(' "\'')
     except Exception as exc:
-        print(f"Error generando plantilla de cobro con Groq: {exc}")
+        logger.error(f"Error generando plantilla de cobro con Groq: {exc}")
         return "Por favor, lo invitamos a ponerse al corriente con sus obligaciones administrativas."
 
 
@@ -111,5 +114,5 @@ async def generate_felicitacion_with_groq() -> str:
         )
         return completion.choices[0].message.content.strip(' "\'')
     except Exception as exc:
-        print(f"Error generando plantilla de felicitacion con Groq: {exc}")
+        logger.error(f"Error generando plantilla de felicitacion con Groq: {exc}")
         return "Agradecemos profundamente su compromiso; su puntualidad con la administracion es invaluable."

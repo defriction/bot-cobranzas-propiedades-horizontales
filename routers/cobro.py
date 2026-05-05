@@ -1,8 +1,11 @@
+import logging
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader, APIKeyQuery
 
 from core.config import settings
-from services.cobro_service import procesar_cobros, procesar_recordatorios
+from services.cobro_service import procesar_cobros, procesar_recordatorios, procesar_felicitaciones
+
+logger = logging.getLogger("uvicorn.error")
 
 router = APIRouter(tags=["Gestion"])
 
@@ -23,7 +26,7 @@ async def ejecutar_recordatorio(background_tasks: BackgroundTasks):
     """
     [FASE 1] Endpoint para enviar recordatorio preventivo con el beneficio de descuento.
     """
-    print("Recibida peticion al webhook /run-recordatorio. Anadiendo a tareas de fondo...")
+    logger.info("Recibida peticion al webhook /run-recordatorio. Anadiendo a tareas de fondo...")
     background_tasks.add_task(procesar_recordatorios)
 
     return {
@@ -38,7 +41,7 @@ async def ejecutar_cobro(background_tasks: BackgroundTasks):
     """
     [FASE 2] Endpoint para disparar el proceso de cobranza real a personas con deuda > 0.
     """
-    print("Recibida peticion al webhook /run-cobro. Anadiendo a tareas de fondo...")
+    logger.info("Recibida peticion al webhook /run-cobro. Anadiendo a tareas de fondo...")
     background_tasks.add_task(procesar_cobros)
 
     return {
@@ -53,9 +56,7 @@ async def ejecutar_felicitacion(background_tasks: BackgroundTasks):
     """
     [FASE 3] Endpoint para disparar el proceso de felicitacion a personas con saldo en 0.
     """
-    from services.cobro_service import procesar_felicitaciones
-
-    print("Recibida peticion al webhook /run-felicitacion. Anadiendo a tareas de fondo...")
+    logger.info("Recibida peticion al webhook /run-felicitacion. Anadiendo a tareas de fondo...")
     background_tasks.add_task(procesar_felicitaciones)
 
     return {

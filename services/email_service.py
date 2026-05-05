@@ -1,11 +1,14 @@
 import asyncio
 import html
+import logging
 import re
 import smtplib
 from email.message import EmailMessage
 
 from core.config import settings
 from email_validator import EmailNotValidError, validate_email
+
+logger = logging.getLogger("uvicorn.error")
 
 
 def _normalize_email(to_email: str) -> str | None:
@@ -34,11 +37,11 @@ def _to_simple_html(text: str) -> str:
 
 def _send_email_sync(to_email: str, subject: str, text: str) -> bool:
     if not settings.SMTP_ENABLED:
-        print("Email deshabilitado: SMTP_ENABLED no esta activo.")
+        logger.warning("Email deshabilitado: SMTP_ENABLED no esta activo.")
         return False
 
     if not all([settings.SMTP_HOST, settings.SMTP_PORT, settings.SMTP_USERNAME, settings.SMTP_PASSWORD]):
-        print("Email no configurado: faltan variables SMTP obligatorias.")
+        logger.error("Email no configurado: faltan variables SMTP obligatorias.")
         return False
 
     from_email = settings.SMTP_FROM_EMAIL or settings.SMTP_USERNAME
@@ -46,7 +49,7 @@ def _send_email_sync(to_email: str, subject: str, text: str) -> bool:
     normalized_to = _normalize_email(to_email)
 
     if not normalized_to:
-        print(f"Email invalido, se omite envio: {to_email}")
+        logger.warning(f"Email invalido, se omite envio: {to_email}")
         return False
 
     email_text = _to_email_friendly_text(text)
@@ -68,10 +71,10 @@ def _send_email_sync(to_email: str, subject: str, text: str) -> bool:
             server.starttls()
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             server.send_message(msg)
-        print(f"Email enviado correctamente a: {normalized_to}")
+        logger.info(f"Email enviado correctamente a: {normalized_to}")
         return True
     except Exception as exc:
-        print(f"Error enviando email a {to_email}: {exc}")
+        logger.error(f"Error enviando email a {to_email}: {exc}")
         return False
 
 
