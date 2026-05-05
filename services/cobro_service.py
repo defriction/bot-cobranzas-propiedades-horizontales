@@ -52,6 +52,63 @@ async def enviar_notificaciones(telefono: str, correo: str, subject: str, messag
     return enviado
 
 
+def _crear_estado_corrida() -> dict:
+    return {
+        "whatsapp_enabled_in_run": True,
+        "safe_mode_activated": False,
+        "safe_mode_reason": "",
+        "safe_mode_phone": "",
+        "whatsapp_sent": 0,
+        "whatsapp_failed": 0,
+        "whatsapp_skipped_safe_mode": 0,
+        "email_sent": 0,
+        "email_failed": 0,
+    }
+
+
+async def enviar_notificaciones_safe_mode(
+    telefono: str,
+    correo: str,
+    subject: str,
+    message: str,
+    estado_corrida: dict,
+):
+    enviado = False
+
+    if telefono:
+        if estado_corrida["whatsapp_enabled_in_run"]:
+            wa_result = await send_whatsapp_message(telefono, message)
+            if wa_result.get("ok"):
+                estado_corrida["whatsapp_sent"] += 1
+                enviado = True
+            else:
+                estado_corrida["whatsapp_failed"] += 1
+                error_type = wa_result.get("error_type", "other")
+                if error_type in {"restricted", "connection_closed"}:
+                    estado_corrida["whatsapp_enabled_in_run"] = False
+                    if not estado_corrida["safe_mode_activated"]:
+                        estado_corrida["safe_mode_activated"] = True
+                        estado_corrida["safe_mode_reason"] = error_type
+                        estado_corrida["safe_mode_phone"] = telefono
+                        logger.warning(
+                            "SAFE MODE WhatsApp activado en esta corrida. "
+                            f"Motivo={error_type} primer_numero={telefono}. "
+                            "Se continuara solo por email."
+                        )
+        else:
+            estado_corrida["whatsapp_skipped_safe_mode"] += 1
+
+    if correo:
+        email_ok = await send_email_message(correo, subject, message)
+        if email_ok:
+            estado_corrida["email_sent"] += 1
+            enviado = True
+        else:
+            estado_corrida["email_failed"] += 1
+
+    return enviado
+
+
 # ===============================================
 # FASE 1: PROCESAR RECORDATORIO PREVENTIVO
 # ===============================================
@@ -59,6 +116,7 @@ async def procesar_recordatorios():
     """Logica Fase 1: Enviar recordatorio general de descuento, ignora las deudas."""
     try:
         data_rows = obtener_datos_sheet()
+        estado_corrida = _crear_estado_corrida()
 
         logger.info("Fase 1: Generando plantilla de Recordatorio con IA (1 sola vez)...")
         plantilla = await generate_recordatorio_with_groq()
@@ -125,7 +183,7 @@ async def procesar_recordatorios():
             logger.info(f"Fase 1: Enviando lote {batch_index + 1}/{total_batches} ({len(lote)} mensajes).")
             for item_index, (apartamento, propietario, telefono, correo, asunto, mensaje_final) in enumerate(lote):
                 logger.info(f"Fase 1 (Recordatorio) -> Apto {apartamento} | {propietario}")
-                await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
+                await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
 
                 # Pausa aleatoria para que el patron de envios se vea mas organico.
                 es_ultimo_del_lote = item_index == len(lote) - 1
@@ -145,7 +203,16 @@ async def procesar_recordatorios():
                 )
                 await asyncio.sleep(espera_entre_lotes)
 
-        logger.info("Finalizado procesamiento de Fase 1 (Recordatorios).")
+        logger.info(
+            "Finalizado procesamiento de Fase 1 (Recordatorios). "
+            f"WA enviados={estado_corrida['whatsapp_sent']} "
+            f"WA fallidos={estado_corrida['whatsapp_failed']} "
+            f"WA omitidos_safe_mode={estado_corrida['whatsapp_skipped_safe_mode']} "
+            f"Email enviados={estado_corrida['email_sent']} "
+            f"Email fallidos={estado_corrida['email_failed']} "
+            f"safe_mode={estado_corrida['safe_mode_activated']} "
+            f"motivo={estado_corrida['safe_mode_reason']}"
+        )
 
     except FileNotFoundError:
         logger.exception("Fase 1: Error: El archivo 'credentials.json' no se encontro.")
@@ -160,6 +227,7 @@ async def procesar_cobros():
     """Logica Fase 2: Lee montos y envia solo a deudores (sin Meses_Mora)."""
     try:
         data_rows = obtener_datos_sheet()
+        estado_corrida = _crear_estado_corrida()
 
         logger.info("Fase 2: Generando plantilla de Cobro con IA (1 sola llamada)...")
         plantilla_cobro = await generate_cobro_with_groq()
@@ -211,9 +279,18 @@ async def procesar_cobros():
             )
 
             asunto = f"Cobro de administracion - Apto {apartamento}"
-            await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
+            await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
 
-        logger.info("Finalizado procesamiento de Fase 2 (Cobranza).")
+        logger.info(
+            "Finalizado procesamiento de Fase 2 (Cobranza). "
+            f"WA enviados={estado_corrida['whatsapp_sent']} "
+            f"WA fallidos={estado_corrida['whatsapp_failed']} "
+            f"WA omitidos_safe_mode={estado_corrida['whatsapp_skipped_safe_mode']} "
+            f"Email enviados={estado_corrida['email_sent']} "
+            f"Email fallidos={estado_corrida['email_failed']} "
+            f"safe_mode={estado_corrida['safe_mode_activated']} "
+            f"motivo={estado_corrida['safe_mode_reason']}"
+        )
 
     except FileNotFoundError:
         logger.exception("Fase 2: Error: El archivo 'credentials.json' no se encontro.")
@@ -228,6 +305,7 @@ async def procesar_felicitaciones():
     """Logica Fase 3: Felicita a residentes con Saldo=0."""
     try:
         data_rows = obtener_datos_sheet()
+        estado_corrida = _crear_estado_corrida()
 
         logger.info("Fase 3: Generando plantilla de Felicitacion con IA (1 sola vez)...")
         from services.groq_service import generate_felicitacion_with_groq
@@ -277,9 +355,18 @@ async def procesar_felicitaciones():
             )
 
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
-            await enviar_notificaciones(telefono, correo, asunto, mensaje_final)
+            await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
 
-        logger.info("Finalizado procesamiento de Fase 3 (Felicitaciones).")
+        logger.info(
+            "Finalizado procesamiento de Fase 3 (Felicitaciones). "
+            f"WA enviados={estado_corrida['whatsapp_sent']} "
+            f"WA fallidos={estado_corrida['whatsapp_failed']} "
+            f"WA omitidos_safe_mode={estado_corrida['whatsapp_skipped_safe_mode']} "
+            f"Email enviados={estado_corrida['email_sent']} "
+            f"Email fallidos={estado_corrida['email_failed']} "
+            f"safe_mode={estado_corrida['safe_mode_activated']} "
+            f"motivo={estado_corrida['safe_mode_reason']}"
+        )
 
     except FileNotFoundError:
         logger.exception("Fase 3: Error: El archivo 'credentials.json' no se encontro.")
