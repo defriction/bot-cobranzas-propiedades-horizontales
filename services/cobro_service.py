@@ -163,7 +163,7 @@ async def procesar_recordatorios():
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan.\n"
-                "👉 *Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. ¡Gracias!*"
+                "👉 *Este es un mensaje automatico. Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. ¡Gracias!*"
             )
             asunto = f"Recordatorio de administracion - Apto {apartamento}"
 
@@ -289,7 +289,7 @@ async def procesar_cobros():
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion y Tesoreria.\n"
-                "👉 *Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
+                "👉 *Este es un mensaje automatico. Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
             )
 
             asunto = f"Cobro de administracion - Apto {apartamento}"
@@ -404,7 +404,7 @@ async def procesar_felicitaciones():
                 "* Estado de Cuenta: Al dia\n"
                 "* Saldo Pendiente: $0.00\n"
                 "Atentamente, Administracion y Tesoreria.\n"
-                "👉 *¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* 🎉"
+                "👉 *Este es un mensaje automatico. ¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* 🎉"
             )
 
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
