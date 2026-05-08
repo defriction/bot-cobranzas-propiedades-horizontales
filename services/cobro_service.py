@@ -17,14 +17,37 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
-RECORDATORIO_DISTRIBUTION_HOURS = 24
-RECORDATORIO_MAX_LOTES = 25
-COBRO_DISTRIBUTION_HOURS = 18
-COBRO_MAX_LOTES = 20
-FELICITACION_DISTRIBUTION_HOURS = 12
-FELICITACION_MAX_LOTES = 12
+# Limite diario estricto para evitar bloqueos (Sandbox de Meta)
+MAX_MENSAJES_DIARIOS = 40
+LOTES_POR_DIA = 4  # 4 lotes al dia = 1 lote cada 6 horas
 logger = logging.getLogger("uvicorn.error")
 
+
+async def sleep_con_conteo(segundos: int, tipo: str, fase: str):
+    """
+    Realiza un asyncio.sleep en intervalos, imprimiendo en los logs
+    el tiempo restante para mayor visibilidad en la consola.
+    """
+    restante = segundos
+    # Para pausas cortas (mensajes), loguea cada 30s. Para pausas largas (lotes), loguea cada 10 min (600s).
+    paso = 30 if segundos <= 300 else 600
+
+    while restante > 0:
+        espera = min(restante, paso)
+        await asyncio.sleep(espera)
+        restante -= espera
+        
+        if restante > 0:
+            if restante >= 3600:
+                horas = restante // 3600
+                minutos = (restante % 3600) // 60
+                logger.info(f"{fase}: ⏳ Timer ({tipo}) -> Faltan {horas}h {minutos}m...")
+            elif restante >= 60:
+                minutos = restante // 60
+                segs = restante % 60
+                logger.info(f"{fase}: ⏳ Timer ({tipo}) -> Faltan {minutos}m {segs}s...")
+            else:
+                logger.info(f"{fase}: ⏳ Timer ({tipo}) -> Faltan {restante}s...")
 
 def obtener_datos_sheet():
     """Funcion helper para conectar y traer datos del Sheet."""
@@ -174,16 +197,21 @@ async def procesar_recordatorios():
             logger.warning("Fase 1: No hay destinatarios validos para enviar recordatorio.")
             return
 
-        # Usamos maximo 3 lotes por corrida para evitar fragmentar demasiado el envio.
-        total_batches = min(RECORDATORIO_MAX_LOTES, total)
+        dias_necesarios = math.ceil(total / MAX_MENSAJES_DIARIOS)
+        total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
-        ventana_horas = max(1.0, RECORDATORIO_DISTRIBUTION_HOURS)
-        ventana_segundos = int(ventana_horas * 3600)
-        espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
+
+        # 🛡️ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
+            batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
+            total_batches = math.ceil(total / batch_size)
+
+        espera_entre_lotes = int((24 * 3600) / LOTES_POR_DIA) if total_batches > 1 else 0
 
         logger.info(
-            f"Fase 1: {total} envios en {total_batches} lotes de {batch_size}. "
-            f"Espera entre lotes: {espera_entre_lotes} segundos."
+            f"Fase 1: {total} envios calculados para {dias_necesarios} dia(s). "
+            f"Se haran {total_batches} lotes de {batch_size} mensajes. "
+            f"Espera entre lotes: {espera_entre_lotes} segundos ({espera_entre_lotes/3600:.1f} horas)."
         )
 
         for batch_index in range(total_batches):
@@ -198,21 +226,20 @@ async def procesar_recordatorios():
 
                 # Pausa aleatoria para que el patron de envios se vea mas organico.
                 es_ultimo_del_lote = item_index == len(lote) - 1
-                es_ultimo_lote = batch_index == total_batches - 1
-                if not (es_ultimo_del_lote and es_ultimo_lote):
+                if not es_ultimo_del_lote:
                     espera_random = random.randint(90, 180)
                     logger.info(
                         f"Fase 1: Espera aleatoria de {espera_random}s "
                         f"antes del siguiente envio (lote {batch_index + 1}/{total_batches})."
                     )
-                    await asyncio.sleep(espera_random)
+                    await sleep_con_conteo(espera_random, "siguiente mensaje", "Fase 1")
 
             if batch_index < total_batches - 1 and espera_entre_lotes > 0:
                 logger.info(
                     f"Fase 1: Espera entre lotes de {espera_entre_lotes}s "
                     f"antes del lote {batch_index + 2}/{total_batches}."
                 )
-                await asyncio.sleep(espera_entre_lotes)
+                await sleep_con_conteo(espera_entre_lotes, "siguiente lote", "Fase 1")
 
         logger.info(
             "Finalizado procesamiento de Fase 1 (Recordatorios). "
@@ -300,15 +327,21 @@ async def procesar_cobros():
             logger.warning("Fase 2: No hay destinatarios validos para enviar cobros.")
             return
 
-        total_batches = min(COBRO_MAX_LOTES, total)
+        dias_necesarios = math.ceil(total / MAX_MENSAJES_DIARIOS)
+        total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
-        ventana_horas = max(1.0, COBRO_DISTRIBUTION_HOURS)
-        ventana_segundos = int(ventana_horas * 3600)
-        espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
+
+        # 🛡️ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
+            batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
+            total_batches = math.ceil(total / batch_size)
+
+        espera_entre_lotes = int((24 * 3600) / LOTES_POR_DIA) if total_batches > 1 else 0
 
         logger.info(
-            f"Fase 2: {total} envios en {total_batches} lotes de {batch_size}. "
-            f"Espera larga entre lotes: {espera_entre_lotes} segundos."
+            f"Fase 2: {total} envios calculados para {dias_necesarios} dia(s). "
+            f"Se haran {total_batches} lotes de {batch_size} mensajes. "
+            f"Espera larga entre lotes: {espera_entre_lotes} segundos ({espera_entre_lotes/3600:.1f} horas)."
         )
 
         for batch_index in range(total_batches):
@@ -321,15 +354,14 @@ async def procesar_cobros():
                 await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
 
                 es_ultimo_del_lote = item_index == len(lote) - 1
-                es_ultimo_lote = batch_index == total_batches - 1
-                if not (es_ultimo_del_lote and es_ultimo_lote):
+                if not es_ultimo_del_lote:
                     espera_random = random.randint(90, 180)
                     logger.info(f"Fase 2: Espera aleatoria de {espera_random}s para proteger el numero...")
-                    await asyncio.sleep(espera_random)
+                    await sleep_con_conteo(espera_random, "siguiente mensaje", "Fase 2")
 
             if batch_index < total_batches - 1 and espera_entre_lotes > 0:
                 logger.info(f"Fase 2: Descanso de {espera_entre_lotes}s antes del lote {batch_index + 2}/{total_batches}.")
-                await asyncio.sleep(espera_entre_lotes)
+                await sleep_con_conteo(espera_entre_lotes, "siguiente lote", "Fase 2")
 
         logger.info(
             "Finalizado procesamiento de Fase 2 (Cobranza). "
@@ -415,15 +447,21 @@ async def procesar_felicitaciones():
             logger.warning("Fase 3: No hay destinatarios validos para enviar felicitaciones.")
             return
 
-        total_batches = min(FELICITACION_MAX_LOTES, total)
+        dias_necesarios = math.ceil(total / MAX_MENSAJES_DIARIOS)
+        total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
-        ventana_horas = max(1.0, FELICITACION_DISTRIBUTION_HOURS)
-        ventana_segundos = int(ventana_horas * 3600)
-        espera_entre_lotes = int(ventana_segundos / max(1, total_batches - 1)) if total_batches > 1 else 0
+
+        # 🛡️ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
+            batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
+            total_batches = math.ceil(total / batch_size)
+
+        espera_entre_lotes = int((24 * 3600) / LOTES_POR_DIA) if total_batches > 1 else 0
 
         logger.info(
-            f"Fase 3: {total} envios en {total_batches} lotes de {batch_size}. "
-            f"Espera larga entre lotes: {espera_entre_lotes} segundos."
+            f"Fase 3: {total} envios calculados para {dias_necesarios} dia(s). "
+            f"Se haran {total_batches} lotes de {batch_size} mensajes. "
+            f"Espera larga entre lotes: {espera_entre_lotes} segundos ({espera_entre_lotes/3600:.1f} horas)."
         )
 
         for batch_index in range(total_batches):
@@ -436,15 +474,14 @@ async def procesar_felicitaciones():
                 await enviar_notificaciones_safe_mode(telefono, correo, asunto, mensaje_final, estado_corrida)
 
                 es_ultimo_del_lote = item_index == len(lote) - 1
-                es_ultimo_lote = batch_index == total_batches - 1
-                if not (es_ultimo_del_lote and es_ultimo_lote):
+                if not es_ultimo_del_lote:
                     espera_random = random.randint(90, 180)
                     logger.info(f"Fase 3: Espera aleatoria de {espera_random}s para proteger el numero...")
-                    await asyncio.sleep(espera_random)
+                    await sleep_con_conteo(espera_random, "siguiente mensaje", "Fase 3")
 
             if batch_index < total_batches - 1 and espera_entre_lotes > 0:
                 logger.info(f"Fase 3: Descanso de {espera_entre_lotes}s antes del lote {batch_index + 2}/{total_batches}.")
-                await asyncio.sleep(espera_entre_lotes)
+                await sleep_con_conteo(espera_entre_lotes, "siguiente lote", "Fase 3")
 
         logger.info(
             "Finalizado procesamiento de Fase 3 (Felicitaciones). "
