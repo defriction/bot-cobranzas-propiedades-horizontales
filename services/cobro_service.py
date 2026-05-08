@@ -165,9 +165,9 @@ async def procesar_recordatorios():
             propietario = row[1].strip()
             telefono = row[2].strip()
 
-            # Columna E: Enviar_Mensaje. Columna F: Correo_Electronico.
-            enviar_mensaje = row[4].strip().upper() if len(row) > 4 else "FALSE"
-            correo = row[5].strip() if len(row) > 5 else ""
+            # Columna D: Enviar_Mensaje (Index 3). Columna E: Correo_Electronico (Index 4).
+            enviar_mensaje = row[3].strip().upper() if len(row) > 3 else "FALSE"
+            correo = row[4].strip() if len(row) > 4 else ""
 
             if enviar_mensaje != "TRUE":
                 logger.info(f"Fase 1: Fila {idx} (Apto {apartamento}) omitida: Enviar_Mensaje='{enviar_mensaje}'.")
@@ -273,27 +273,30 @@ async def procesar_cobros():
         pendientes = []
 
         for idx, row in enumerate(data_rows, start=2):
-            if len(row) < 4:
+            if len(row) < 3:
                 logger.warning(f"Fase 2: Fila {idx} omitida (datos incompletos basicos): {row}")
                 continue
 
             apartamento = row[0].strip()
             propietario = row[1].strip()
             telefono = row[2].strip()
-            saldo_str = row[3].strip()
 
-            # Columna E: Enviar_Mensaje. Columna F: Correo_Electronico.
-            enviar_mensaje = row[4].strip().upper() if len(row) > 4 else "FALSE"
-            correo = row[5].strip() if len(row) > 5 else ""
+            # Columna D: Enviar_Mensaje (Index 3). Columna E: Correo_Electronico (Index 4).
+            enviar_mensaje = row[3].strip().upper() if len(row) > 3 else "FALSE"
+            correo = row[4].strip() if len(row) > 4 else ""
 
             try:
-                saldo_limpio = saldo_str.replace("$", "").replace(",", "").strip()
-                saldo = float(saldo_limpio) if saldo_limpio else 0.0
+                saldo_anterior = float(row[5].replace("$", "").replace(",", "").strip() or 0) if len(row) > 5 else 0.0
+                intereses = float(row[6].replace("$", "").replace(",", "").strip() or 0) if len(row) > 6 else 0.0
+                sanciones = float(row[7].replace("$", "").replace(",", "").strip() or 0) if len(row) > 7 else 0.0
+                valor_mes = float(row[8].replace("$", "").replace(",", "").strip() or 0) if len(row) > 8 else 0.0
+                valor_con_descuento = float(row[9].replace("$", "").replace(",", "").strip() or 0) if len(row) > 9 else 0.0
+                valor_sin_descuento = float(row[10].replace("$", "").replace(",", "").strip() or 0) if len(row) > 10 else 0.0
             except ValueError:
-                logger.warning(f"Fase 2: Fila {idx} (Apto {apartamento}): Error numerico (Saldo: '{saldo_str}').")
+                logger.warning(f"Fase 2: Fila {idx} (Apto {apartamento}): Error numerico en las nuevas columnas de saldo.")
                 continue
 
-            if saldo <= 0:
+            if valor_sin_descuento <= 0:
                 continue
 
             if enviar_mensaje != "TRUE":
@@ -301,18 +304,24 @@ async def procesar_cobros():
                 continue
 
             if not telefono and not correo:
-                logger.warning(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: debe ${saldo} y no tiene telefono ni Correo_Electronico.")
+                logger.warning(f"Fase 2: Fila {idx} (Apto {apartamento}) omitida: debe ${valor_sin_descuento} y no tiene telefono ni Correo_Electronico.")
                 continue
 
-            logger.info(f"Fase 2 (Cobro) -> Apto {apartamento} | Saldo: ${saldo}")
-            saldo_formateado = f"{saldo:,.2f}"
+            logger.info(f"Fase 2 (Cobro) -> Apto {apartamento} | Total SIN descuento: ${valor_sin_descuento:,.2f}")
 
             saludo = f"Hola {propietario}, propietario(a) del apartamento {apartamento} en el Conjunto Residencial Arboreto Guayacan.\n"
 
             mensaje_final = (
                 f"{saludo}\n"
                 f"{plantilla_cobro}\n\n"
-                f"* Saldo Pendiente: ${saldo_formateado}\n"
+                f"📊 *Detalle de tu Estado de Cuenta:*\n"
+                f"• Saldo Anterior: ${saldo_anterior:,.2f}\n"
+                f"• Intereses: ${intereses:,.2f}\n"
+                f"• Sanciones: ${sanciones:,.2f}\n"
+                f"• Valor del Mes: ${valor_mes:,.2f}\n"
+                f"--------------------------------\n"
+                f"💰 *Total a pagar CON descuento (Hasta el 10):* ${valor_con_descuento:,.2f}\n"
+                f"🔴 *Total a pagar SIN descuento:* ${valor_sin_descuento:,.2f}\n\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion y Tesoreria.\n"
@@ -397,25 +406,24 @@ async def procesar_felicitaciones():
         pendientes = []
 
         for idx, row in enumerate(data_rows, start=2):
-            if len(row) < 4:
+            if len(row) < 3:
                 continue
 
             apartamento = row[0].strip()
             propietario = row[1].strip()
             telefono = row[2].strip()
-            saldo_str = row[3].strip()
 
-            # Columna E: Enviar_Mensaje. Columna F: Correo_Electronico.
-            enviar_mensaje = row[4].strip().upper() if len(row) > 4 else "FALSE"
-            correo = row[5].strip() if len(row) > 5 else ""
+            # Columna D: Enviar_Mensaje (Index 3). Columna E: Correo_Electronico (Index 4).
+            enviar_mensaje = row[3].strip().upper() if len(row) > 3 else "FALSE"
+            correo = row[4].strip() if len(row) > 4 else ""
 
             try:
-                saldo_limpio = saldo_str.replace("$", "").replace(",", "").strip()
-                saldo = float(saldo_limpio) if saldo_limpio else 0.0
+                # Columna F: Saldo_Anterior (Index 5)
+                saldo_anterior = float(row[5].replace("$", "").replace(",", "").strip() or 0) if len(row) > 5 else 0.0
             except ValueError:
                 continue
 
-            if saldo != 0:
+            if saldo_anterior != 0:
                 continue
 
             if enviar_mensaje != "TRUE":
@@ -434,7 +442,7 @@ async def procesar_felicitaciones():
                 f"{saludo}\n"
                 f"{plantilla}\n\n"
                 "* Estado de Cuenta: Al dia\n"
-                "* Saldo Pendiente: $0.00\n"
+                "* Saldo Anterior: $0.00\n"
                 "Atentamente, Administracion y Tesoreria.\n"
                 "👉 *Este es un mensaje automatico. ¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* 🎉"
             )
