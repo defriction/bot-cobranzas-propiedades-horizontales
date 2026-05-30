@@ -1,8 +1,9 @@
-import gspread
+﻿import gspread
 import asyncio
 import math
 import random
 import logging
+from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 
 from core.config import settings
@@ -18,9 +19,23 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 # Limite diario estricto para evitar bloqueos (Sandbox de Meta)
-MAX_MENSAJES_DIARIOS = 40
+MAX_MENSAJES_DIARIOS = 36  # Margen de seguridad: 36 mensajes para no tocar el techo de 40 y permitirte chatear a mano
 LOTES_POR_DIA = 4  # 4 lotes al dia = 1 lote cada 6 horas
 logger = logging.getLogger("uvicorn.error")
+MESES_ES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+]
 
 
 async def sleep_con_conteo(segundos: int, tipo: str, fase: str):
@@ -41,13 +56,13 @@ async def sleep_con_conteo(segundos: int, tipo: str, fase: str):
             if restante >= 3600:
                 horas = restante // 3600
                 minutos = (restante % 3600) // 60
-                logger.info(f"{fase}: ⏳ Timer ({tipo}) -> Faltan {horas}h {minutos}m...")
+                logger.info(f"{fase}: â³ Timer ({tipo}) -> Faltan {horas}h {minutos}m...")
             elif restante >= 60:
                 minutos = restante // 60
                 segs = restante % 60
-                logger.info(f"{fase}: ⏳ Timer ({tipo}) -> Faltan {minutos}m {segs}s...")
+                logger.info(f"{fase}: â³ Timer ({tipo}) -> Faltan {minutos}m {segs}s...")
             else:
-                logger.info(f"{fase}: ⏳ Timer ({tipo}) -> Faltan {restante}s...")
+                logger.info(f"{fase}: â³ Timer ({tipo}) -> Faltan {restante}s...")
 
 def obtener_datos_sheet():
     """Funcion helper para conectar y traer datos del Sheet."""
@@ -119,13 +134,13 @@ async def enviar_notificaciones_safe_mode(
                         estado_corrida["safe_mode_phone"] = telefono
                         
                         mensaje_alerta = (
-                            f"🚨 SAFE MODE WhatsApp activado. Motivo={error_type} al intentar enviar a {telefono}. "
+                            f"ðŸš¨ SAFE MODE WhatsApp activado. Motivo={error_type} al intentar enviar a {telefono}. "
                             "Se continuara el proceso SOLO por EMAIL."
                         )
                         if error_type == "connection_closed":
-                            mensaje_alerta += " ⚠️ ACCIÓN REQUERIDA: Ve a Evolution API y reconecta el código QR. La instancia se desconectó."
+                            mensaje_alerta += " âš ï¸ ACCIÃ“N REQUERIDA: Ve a Evolution API y reconecta el cÃ³digo QR. La instancia se desconectÃ³."
                         elif error_type == "restricted":
-                            mensaje_alerta += " ⚠️ ALERTA GRAVE: Meta ha restringido la cuenta de WhatsApp. Ve a la app en el celular y presiona 'Solicitar Revisión'."
+                            mensaje_alerta += " âš ï¸ ALERTA GRAVE: Meta ha restringido la cuenta de WhatsApp. Ve a la app en el celular y presiona 'Solicitar RevisiÃ³n'."
                             
                         logger.warning(mensaje_alerta)
         else:
@@ -142,6 +157,10 @@ async def enviar_notificaciones_safe_mode(
     return enviado
 
 
+def _mes_actual_es() -> str:
+    return MESES_ES[datetime.now().month - 1]
+
+
 # ===============================================
 # FASE 1: PROCESAR RECORDATORIO PREVENTIVO
 # ===============================================
@@ -155,6 +174,7 @@ async def procesar_recordatorios():
         plantilla = await generate_recordatorio_with_groq()
 
         pendientes = []
+        mes_beneficio = _mes_actual_es()
 
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 3:
@@ -180,13 +200,13 @@ async def procesar_recordatorios():
             saludo = f"Hola {propietario}, apto {apartamento}.\n"
             mensaje_final = (
                 f"{saludo}{plantilla}\n\n"
-                "* Descuento: 10% por pago el 10 de cada mes antes de las 4:00 PM\n"
+                f"* Descuento ({mes_beneficio.title()}): 10% por pago el 10 antes de las 4:00 PM\n"
                 "* Condicion: Debe estar al dia (saldo en $0) para aplicar el descuento\n"
                 "* Importante: El descuento no aplica sobre deudas de periodos pasados\n\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan.\n"
-                "👉 *Este es un mensaje automatico. Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. ¡Gracias!*"
+                "ðŸ‘‰ *Este es un mensaje automatico. Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. Â¡Gracias!*"
             )
             asunto = f"Recordatorio de administracion - Apto {apartamento}"
 
@@ -201,7 +221,7 @@ async def procesar_recordatorios():
         total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
 
-        # 🛡️ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        # ðŸ›¡ï¸ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
         if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
             batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
             total_batches = math.ceil(total / batch_size)
@@ -271,6 +291,7 @@ async def procesar_cobros():
         plantilla_cobro = await generate_cobro_with_groq()
 
         pendientes = []
+        mes_beneficio = _mes_actual_es()
 
         for idx, row in enumerate(data_rows, start=2):
             if len(row) < 3:
@@ -314,18 +335,19 @@ async def procesar_cobros():
             mensaje_final = (
                 f"{saludo}\n"
                 f"{plantilla_cobro}\n\n"
-                f"📊 *Detalle de tu Estado de Cuenta:*\n"
-                f"• Saldo Anterior: ${saldo_anterior:,.2f}\n"
-                f"• Intereses: ${intereses:,.2f}\n"
-                f"• Sanciones: ${sanciones:,.2f}\n"
-                f"• Valor del Mes: ${valor_mes:,.2f}\n"
+                f"* Beneficio de {mes_beneficio.title()}: aplica descuento pagando hasta el 10 a las 4:00 PM.\n\n"
+                f"ðŸ“Š *Detalle de tu Estado de Cuenta:*\n"
+                f"â€¢ Saldo Anterior: ${saldo_anterior:,.2f}\n"
+                f"â€¢ Intereses: ${intereses:,.2f}\n"
+                f"â€¢ Sanciones: ${sanciones:,.2f}\n"
+                f"â€¢ Valor del Mes: ${valor_mes:,.2f}\n"
                 f"--------------------------------\n"
-                f"💰 *Total a pagar CON descuento (Hasta el 10):* ${valor_con_descuento:,.2f}\n"
-                f"🔴 *Total a pagar SIN descuento:* ${valor_sin_descuento:,.2f}\n\n"
+                f"ðŸ’° *Total a pagar CON descuento (Hasta el 10):* ${valor_con_descuento:,.2f}\n"
+                f"ðŸ”´ *Total a pagar SIN descuento:* ${valor_sin_descuento:,.2f}\n\n"
                 f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
                 f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion y Tesoreria.\n"
-                "👉 *Este es un mensaje automatico. Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
+                "ðŸ‘‰ *Este es un mensaje automatico. Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
             )
 
             asunto = f"Cobro de administracion - Apto {apartamento}"
@@ -340,7 +362,7 @@ async def procesar_cobros():
         total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
 
-        # 🛡️ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        # ðŸ›¡ï¸ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
         if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
             batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
             total_batches = math.ceil(total / batch_size)
@@ -444,7 +466,7 @@ async def procesar_felicitaciones():
                 "* Estado de Cuenta: Al dia\n"
                 "* Saldo Anterior: $0.00\n"
                 "Atentamente, Administracion y Tesoreria.\n"
-                "👉 *Este es un mensaje automatico. ¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* 🎉"
+                "ðŸ‘‰ *Este es un mensaje automatico. Â¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* ðŸŽ‰"
             )
 
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
@@ -459,7 +481,7 @@ async def procesar_felicitaciones():
         total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
 
-        # 🛡️ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        # ðŸ›¡ï¸ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
         if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
             batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
             total_batches = math.ceil(total / batch_size)
