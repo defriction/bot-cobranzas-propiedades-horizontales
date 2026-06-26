@@ -1,4 +1,4 @@
-﻿import gspread
+import gspread
 import asyncio
 import math
 import random
@@ -56,13 +56,13 @@ async def sleep_con_conteo(segundos: int, tipo: str, fase: str):
             if restante >= 3600:
                 horas = restante // 3600
                 minutos = (restante % 3600) // 60
-                logger.info(f"{fase}: â³ Timer ({tipo}) -> Faltan {horas}h {minutos}m...")
+                logger.info(f"{fase}: \u23f3 Timer ({tipo}) -> Faltan {horas}h {minutos}m...")
             elif restante >= 60:
                 minutos = restante // 60
                 segs = restante % 60
-                logger.info(f"{fase}: â³ Timer ({tipo}) -> Faltan {minutos}m {segs}s...")
+                logger.info(f"{fase}: \u23f3 Timer ({tipo}) -> Faltan {minutos}m {segs}s...")
             else:
-                logger.info(f"{fase}: â³ Timer ({tipo}) -> Faltan {restante}s...")
+                logger.info(f"{fase}: \u23f3 Timer ({tipo}) -> Faltan {restante}s...")
 
 def obtener_datos_sheet():
     """Funcion helper para conectar y traer datos del Sheet."""
@@ -134,13 +134,13 @@ async def enviar_notificaciones_safe_mode(
                         estado_corrida["safe_mode_phone"] = telefono
                         
                         mensaje_alerta = (
-                            f"ðŸš¨ SAFE MODE WhatsApp activado. Motivo={error_type} al intentar enviar a {telefono}. "
+                            f"\U0001f6a8 SAFE MODE WhatsApp activado. Motivo={error_type} al intentar enviar a {telefono}. "
                             "Se continuara el proceso SOLO por EMAIL."
                         )
                         if error_type == "connection_closed":
-                            mensaje_alerta += " âš ï¸ ACCIÃ“N REQUERIDA: Ve a Evolution API y reconecta el cÃ³digo QR. La instancia se desconectÃ³."
+                            mensaje_alerta += " \u26a0\ufe0f ACCI\u00d3N REQUERIDA: Ve a Evolution API y reconecta el c\u00f3digo QR. La instancia se desconect\u00f3."
                         elif error_type == "restricted":
-                            mensaje_alerta += " âš ï¸ ALERTA GRAVE: Meta ha restringido la cuenta de WhatsApp. Ve a la app en el celular y presiona 'Solicitar RevisiÃ³n'."
+                            mensaje_alerta += " \u26a0\ufe0f ALERTA GRAVE: Meta ha restringido la cuenta de WhatsApp. Ve a la app en el celular y presiona 'Solicitar Revisi\u00f3n'."
                             
                         logger.warning(mensaje_alerta)
         else:
@@ -200,13 +200,13 @@ async def procesar_recordatorios():
             saludo = f"Hola {propietario}, apto {apartamento}.\n"
             mensaje_final = (
                 f"{saludo}{plantilla}\n\n"
-                f"* Descuento ({mes_beneficio.title()}): 10% por pago el 10 antes de las 4:00 PM\n"
-                "* Condicion: Debe estar al dia (saldo en $0) para aplicar el descuento\n"
-                "* Importante: El descuento no aplica sobre deudas de periodos pasados\n\n"
-                f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
-                f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
+                f"• Descuento ({mes_beneficio.title()}): 10% por pago el 10 antes de las 4:00 PM\n"
+                "• Condicion: Debe estar al dia (saldo en $0) para aplicar el descuento\n"
+                "• Importante: El descuento no aplica sobre deudas de periodos pasados\n\n"
+                f"• Paga facil por PSE: {LINK_PAGO_PSE}\n"
+                f"• Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion de Arboreto Guayacan.\n"
-                "ðŸ‘‰ *Este es un mensaje automatico. Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. Â¡Gracias!*"
+                "\U0001f449 *Este es un mensaje automatico. Por favor, responde con un 'Ok' o 'Recibido' para confirmar que leiste este aviso. \u00a1Gracias!*"
             )
             asunto = f"Recordatorio de administracion - Apto {apartamento}"
 
@@ -221,7 +221,7 @@ async def procesar_recordatorios():
         total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
 
-        # ðŸ›¡ï¸ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        # \U0001f6e1\ufe0f VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
         if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
             batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
             total_batches = math.ceil(total / batch_size)
@@ -335,19 +335,19 @@ async def procesar_cobros():
             mensaje_final = (
                 f"{saludo}\n"
                 f"{plantilla_cobro}\n\n"
-                f"* Beneficio de {mes_beneficio.title()}: aplica descuento pagando hasta el 10 a las 4:00 PM.\n\n"
-                f"ðŸ“Š *Detalle de tu Estado de Cuenta:*\n"
-                f"â€¢ Saldo Anterior: ${saldo_anterior:,.2f}\n"
-                f"â€¢ Intereses: ${intereses:,.2f}\n"
-                f"â€¢ Sanciones: ${sanciones:,.2f}\n"
-                f"â€¢ Valor del Mes: ${valor_mes:,.2f}\n"
+                f"• Beneficio de {mes_beneficio.title()}: aplica descuento pagando hasta el 10 a las 4:00 PM.\n\n"
+                f"\U0001f4ca *Detalle de tu Estado de Cuenta:*\n"
+                f"\u2022 Saldo Anterior: ${saldo_anterior:,.2f}\n"
+                f"\u2022 Intereses: ${intereses:,.2f}\n"
+                f"\u2022 Sanciones: ${sanciones:,.2f}\n"
+                f"\u2022 Valor del Mes: ${valor_mes:,.2f}\n"
                 f"--------------------------------\n"
-                f"ðŸ’° *Total a pagar CON descuento (Hasta el 10):* ${valor_con_descuento:,.2f}\n"
-                f"ðŸ”´ *Total a pagar SIN descuento:* ${valor_sin_descuento:,.2f}\n\n"
-                f"* Paga facil por PSE: {LINK_PAGO_PSE}\n"
-                f"* Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
+                f"\U0001f4b0 *Total a pagar CON descuento (Hasta el 10):* ${valor_con_descuento:,.2f}\n"
+                f"\U0001f534 *Total a pagar SIN descuento:* ${valor_sin_descuento:,.2f}\n\n"
+                f"• Paga facil por PSE: {LINK_PAGO_PSE}\n"
+                f"• Envia tu comprobante a: {EMAIL_COMPROBANTE}\n\n"
                 "Atentamente, Administracion y Tesoreria.\n"
-                "ðŸ‘‰ *Este es un mensaje automatico. Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
+                "\U0001f449 *Este es un mensaje automatico. Para nuestros registros, por favor confirmanos con un 'Recibido' al leer este mensaje.*"
             )
 
             asunto = f"Cobro de administracion - Apto {apartamento}"
@@ -362,7 +362,7 @@ async def procesar_cobros():
         total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
 
-        # ðŸ›¡ï¸ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        # \U0001f6e1\ufe0f VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
         if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
             batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
             total_batches = math.ceil(total / batch_size)
@@ -463,10 +463,10 @@ async def procesar_felicitaciones():
             mensaje_final = (
                 f"{saludo}\n"
                 f"{plantilla}\n\n"
-                "* Estado de Cuenta: Al dia\n"
-                "* Saldo Anterior: $0.00\n"
+                "\u2022 Estado de Cuenta: Al dia\n"
+                "\u2022 Saldo Anterior: $0.00\n"
                 "Atentamente, Administracion y Tesoreria.\n"
-                "ðŸ‘‰ *Este es un mensaje automatico. Â¡Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* ðŸŽ‰"
+                "\U0001f449 *Este es un mensaje automatico. \u00a1Responde con un 'Gracias' o cualquier emoji para saber que recibiste esta felicitacion!* \U0001f389"
             )
 
             asunto = f"Felicitacion por pago al dia - Apto {apartamento}"
@@ -481,7 +481,7 @@ async def procesar_felicitaciones():
         total_batches = min(total, dias_necesarios * LOTES_POR_DIA)
         batch_size = math.ceil(total / total_batches)
 
-        # ðŸ›¡ï¸ VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
+        # \U0001f6e1\ufe0f VALIDACION ESTRICTA: Garantizar que NUNCA supere el limite diario
         if (batch_size * LOTES_POR_DIA) > MAX_MENSAJES_DIARIOS:
             batch_size = max(1, MAX_MENSAJES_DIARIOS // LOTES_POR_DIA)
             total_batches = math.ceil(total / batch_size)
